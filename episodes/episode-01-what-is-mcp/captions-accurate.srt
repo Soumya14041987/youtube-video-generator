@@ -1,0 +1,243 @@
+1
+00:00:00,280 --> 00:00:04,260
+Your AI coding assistant just read your deployment logs, cross-referenced your
+
+2
+00:00:04,260 --> 00:00:07,640
+last three commits, and told you exactly why the build broke
+
+3
+00:00:07,640 --> 00:00:10,730
+— without a developer writing a single custom integration for any of it.
+
+4
+00:00:10,730 --> 00:00:13,130
+That's not a smarter model. That's MCP.
+
+5
+00:00:13,130 --> 00:00:16,340
+MCP stands for Model Context
+
+6
+00:00:16,340 --> 00:00:19,570
+Protocol. Anthropic open-sourced it on November 25th,
+
+7
+00:00:19,660 --> 00:00:23,000
+2024, as a standard way to connect AI models and agents
+
+8
+00:00:23,000 --> 00:00:25,580
+to external tools, data sources, and systems.
+
+9
+00:00:25,580 --> 00:00:28,920
+It's a protocol, not a product — like HTTP,
+
+10
+00:00:28,920 --> 00:00:32,270
+or USB-C — and it isn't owned or gatekept by any single
+
+11
+00:00:32,270 --> 00:00:34,650
+vendor. Here's the problem it was built to kill.
+
+12
+00:00:34,880 --> 00:00:38,410
+Before MCP, every AI application that wanted to talk to every
+
+13
+00:00:38,410 --> 00:00:41,110
+tool needed its own custom, one-off integration.
+
+14
+00:00:41,110 --> 00:00:44,510
+Ten AI apps, ten data sources — that's potentially
+
+15
+00:00:44,510 --> 00:00:48,330
+a hundred bespoke connectors. Engineers call this the M-by-N integration
+
+16
+00:00:48,330 --> 00:00:51,710
+problem: multiply your assistants by your tools, and that's how many
+
+17
+00:00:51,710 --> 00:00:54,340
+brittle, hand-built bridges someone has to maintain.
+
+18
+00:00:54,340 --> 00:00:58,550
+MCP turns that into M-plus-N. Build one MCP-compliant client,
+
+19
+00:00:58,720 --> 00:01:02,190
+build one MCP-compliant server, and they interoperate — no
+
+20
+00:01:02,190 --> 00:01:05,070
+custom glue in between. The architecture has three pieces.
+
+21
+00:01:05,340 --> 00:01:08,540
+An MCP host is the application you actually interact with — Claude
+
+22
+00:01:08,540 --> 00:01:11,150
+Desktop, Claude Code, any agent-capable app.
+
+23
+00:01:11,400 --> 00:01:13,960
+Inside it, an MCP client manages the connection.
+
+24
+00:01:14,200 --> 00:01:18,070
+On the other end, an MCP server exposes specific capabilities in a standardized
+
+25
+00:01:18,070 --> 00:01:21,320
+way: tools the model can call, resources it can read, prompts
+
+26
+00:01:21,320 --> 00:01:24,780
+it can reuse. The model doesn't need custom code to understand your cloud provider's
+
+27
+00:01:24,870 --> 00:01:28,150
+logs or your CI/CD pipeline — it just needs an MCP server sitting
+
+28
+00:01:28,150 --> 00:01:31,370
+in front of them, speaking the same protocol every other server speaks.
+
+29
+00:01:31,560 --> 00:01:35,020
+Picture a second case: a support-ops agent that looks up a customer in a
+
+30
+00:01:35,020 --> 00:01:38,480
+CRM through one MCP server, then checks an order status in a completely different
+
+31
+00:01:38,480 --> 00:01:41,710
+backend through another — neither integration written specifically for that
+
+32
+00:01:41,710 --> 00:01:45,340
+bot. Same protocol, two unrelated systems, zero bespoke glue code
+
+33
+00:01:45,340 --> 00:01:48,560
+either time. Most explainers stop at "USB-C for AI" and leave it
+
+34
+00:01:48,560 --> 00:01:51,830
+there. Here's what almost none of them mention: MCP's most consequential
+
+35
+00:01:51,830 --> 00:01:55,590
+change didn't happen at launch — it happened on July 28th, 2026, with
+
+36
+00:01:55,590 --> 00:01:58,800
+the protocol's biggest spec revision yet. The original MCP was stateful
+
+37
+00:01:58,960 --> 00:02:02,240
+— a session-based handshake, sticky connections, the kind of thing that's
+
+38
+00:02:02,350 --> 00:02:05,770
+fine for a demo and painful in production. The July 2026 spec removed
+
+39
+00:02:05,770 --> 00:02:09,240
+that. Protocol version and client capabilities now travel per-request instead
+
+40
+00:02:09,240 --> 00:02:12,720
+of through a persistent session, and authorization got a stricter, hardened rewrite.
+
+41
+00:02:12,920 --> 00:02:16,380
+The practical result: an MCP server can now sit behind a completely standard
+
+42
+00:02:16,380 --> 00:02:19,720
+load balancer, with no sticky sessions required — the same way any ordinary stateless
+
+43
+00:02:19,960 --> 00:02:22,940
+web service scales in Kubernetes or behind a CI/CD-deployed fleet.
+
+44
+00:02:23,160 --> 00:02:25,630
+That sounds like a downgrade in excitement. It's the opposite.
+
+45
+00:02:25,630 --> 00:02:28,910
+"Boring infrastructure" is exactly the property an SRE wants before something
+
+46
+00:02:28,910 --> 00:02:32,250
+goes anywhere near production. Before this change, running MCP at real scale
+
+47
+00:02:32,250 --> 00:02:35,540
+meant fighting session affinity — pinning every client to the one server instance
+
+48
+00:02:35,540 --> 00:02:38,670
+holding its session state, then hoping a rolling deploy didn't drop connections mid-handshake.
+
+49
+00:02:38,670 --> 00:02:42,140
+That's the exact class of problem service meshes and API gateways were
+
+50
+00:02:42,140 --> 00:02:45,170
+built to route around, and MCP's stateful design fought against all of it.
+
+51
+00:02:45,640 --> 00:02:48,860
+Strip the session out, and an MCP server becomes just another stateless HTTP
+
+52
+00:02:48,860 --> 00:02:52,120
+workload — the same deployment pattern already sitting behind every other production service
+
+53
+00:02:52,120 --> 00:02:54,500
+you run, no special-cased infrastructure required.
+
+54
+00:02:54,680 --> 00:02:58,120
+Nearly every explainer, video or written, still tells MCP's story through
+
+55
+00:02:58,120 --> 00:03:01,560
+its November 2024 stateful origins. The version of this story that actually matters
+
+56
+00:03:01,560 --> 00:03:05,160
+to a DevOps audience is the one where MCP stopped being a clever AI demo protocol
+
+57
+00:03:05,160 --> 00:03:08,230
+and started being something you can put behind a load balancer without thinking twice.
+
+58
+00:03:08,440 --> 00:03:11,840
+If you're building with AI agents in a real Cloud or DevOps stack, this is the layer
+
+59
+00:03:11,840 --> 00:03:14,130
+worth understanding before you wire up your next integration.
+
+60
+00:03:14,550 --> 00:03:18,060
+Follow for the next one — we're covering Agentic AI, MCP, AIOps, and
+
+61
+00:03:18,060 --> 00:03:19,080
+DevSecOps every week.

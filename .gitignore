@@ -1,0 +1,23 @@
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+
+# OS junk
+.DS_Store
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Episode media — kept intact locally, never committed. Video/audio files
+# accumulate as the MCP Zero-to-Hero playlist grows, and GitHub has a
+# 100MB hard file limit / discourages large binaries without Git LFS.
+# Script, metadata, cue sheets, and thumbnails (small, useful to browse
+# in the repo) still get tracked — only the heavy media is excluded.
+episodes/**/*.mp4
+episodes/**/*.wav
+
+# Local settings (machine-specific), not shared config
+.claude/settings.local.json
+
+# Secrets — never commit
+.env
