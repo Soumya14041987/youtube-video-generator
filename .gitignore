@@ -1,5 +1,10 @@
 # graft's local graph cache — regenerable, not committed (run `graft build`).
+# Anchored pattern alone missed a stray nested copy once (a hook recreated
+# graft/.cache under a stale episode-folder path after a rename) — the
+# unanchored rule below catches any graft cache dir regardless of nesting.
 /graft/
+**/graft/.cache/
+**/graft/.graph/
 
 # OS junk
 .DS_Store
