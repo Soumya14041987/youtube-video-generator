@@ -1,0 +1,43 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "AgentCore Runtime: V1 vs new (AWS-reported P75)",
+    "output": "agentcore-v2-diagram.html",
+    "quality_profile": "showcase",
+    "legend": { "mode": "hidden" }
+  },
+  "lanes": [
+    { "id": "v1", "label": "V1 Runtime" },
+    { "id": "v2setup", "label": "New Runtime (V2): one-time setup" },
+    { "id": "v2run", "label": "New Runtime (V2): every new instance" }
+  ],
+  "phases": [
+    { "id": "setup", "label": "Set up", "fromCol": 0, "toCol": 1 },
+    { "id": "start", "label": "Start an instance", "fromCol": 2, "toCol": 4, "variant": "emphasis" },
+    { "id": "run", "label": "Run the session", "fromCol": 5, "toCol": 5 }
+  ],
+  "mainPath": ["prepare", "snapshot", "restore", "ready_v2", "mem_v2"],
+  "nodes": [
+    { "id": "new_v1", "lane": "v1", "col": 2, "type": "external", "label": "New instance" },
+    { "id": "startup_v1", "lane": "v1", "col": 3, "type": "backend", "label": "Full startup", "sublabel": "repeated every time" },
+    { "id": "ready_v1", "lane": "v1", "col": 4, "width": 116, "type": "cloud", "label": "Agent ready", "sublabel": "cold start 5.4-30 s" },
+    { "id": "mem_v1", "lane": "v1", "col": 5, "type": "messagebus", "label": "Memory held", "sublabel": "billed on peak" },
+    { "id": "prepare", "lane": "v2setup", "col": 0, "type": "backend", "label": "Prepare", "sublabel": "environment, once" },
+    { "id": "snapshot", "lane": "v2setup", "col": 1, "type": "database", "label": "Snapshot" },
+    { "id": "new_v2", "lane": "v2run", "col": 2, "type": "external", "label": "New instance" },
+    { "id": "restore", "lane": "v2run", "col": 3, "type": "backend", "label": "Restore", "sublabel": "from snapshot" },
+    { "id": "ready_v2", "lane": "v2run", "col": 4, "width": 116, "type": "cloud", "label": "Agent ready", "sublabel": "cold start 1.9-2.0 s" },
+    { "id": "mem_v2", "lane": "v2run", "col": 5, "type": "messagebus", "label": "Elastic memory", "sublabel": "billed on usage", "width": 108 }
+  ],
+  "edges": [
+    { "from": "new_v1", "to": "startup_v1" },
+    { "from": "startup_v1", "to": "ready_v1" },
+    { "from": "ready_v1", "to": "mem_v1", "label": "until session ends" },
+    { "from": "prepare", "to": "snapshot", "variant": "emphasis" },
+    { "from": "snapshot", "to": "restore", "label": "instead of full startup", "variant": "emphasis" },
+    { "from": "new_v2", "to": "restore" },
+    { "from": "restore", "to": "ready_v2", "variant": "emphasis" },
+    { "from": "ready_v2", "to": "mem_v2", "label": "grows, then reclaimed" }
+  ]
+}

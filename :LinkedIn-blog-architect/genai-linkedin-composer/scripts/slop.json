@@ -1,0 +1,190 @@
+{
+  "version": "1.1",
+  "_attribution": "invisible, typographic and structures sections derive in part from li-human/slop.json in Jakeschincariol/linkedin-agent-skill (MIT). See THIRD_PARTY_NOTICES.md.",
+  "note": "Lexicon for humanize.py and detect.py. Replacements stay plain and grammatical. Edit freely - if the QA gate keeps flagging a word you actually use, take it out.",
+  "technical_allow": [
+    "\\bterraform\\s+(?:force-)?unlock\\b",
+    "\\b(?:force-)?unlock(?:ed|ing)?\\s+(?:the\\s+)?(?:state|lock|mutex|table|workspace)\\b",
+    "\\bstate\\s+(?:un)?lock(?:ing)?\\b",
+    "\\.terraform\\.lock\\.hcl",
+    "\\b(?:test|eval|evaluation|benchmark|agent|fuzz)\\s+harness\\b",
+    "\\bharness\\s+(?:engineering|chart|ci|cd|platform|pipeline|delegate)\\b",
+    "\\b(?:elevate|elevated|elevating)\\s+(?:[\\w-]+\\s+)?(?:privileges?|permissions?|access|roles?|rights)\\b",
+    "\\bprivilege\\s+elevation\\b",
+    "\\bunpack(?:ed|ing)?\\s+(?:the\\s+|a\\s+)?(?:archive|tarball|zip|image|layers?|bundle|payload|args|kwargs)\\b",
+    "\\bsingle\\s+pane\\s+of\\s+glass\\b(?=\\s+(?:view|dashboard|for\\s+(?:observability|monitoring)))"
+  ],
+  "invisible": [
+    { "cp": "U+200B", "name": "ZERO WIDTH SPACE", "action": "delete" },
+    { "cp": "U+200C", "name": "ZERO WIDTH NON-JOINER", "action": "delete" },
+    { "cp": "U+200D", "name": "ZERO WIDTH JOINER", "action": "delete" },
+    { "cp": "U+2060", "name": "WORD JOINER", "action": "delete" },
+    { "cp": "U+FEFF", "name": "ZERO WIDTH NO-BREAK SPACE / BOM", "action": "delete" },
+    { "cp": "U+00AD", "name": "SOFT HYPHEN", "action": "delete" },
+    { "cp": "U+180E", "name": "MONGOLIAN VOWEL SEPARATOR", "action": "delete" },
+    { "cp": "U+061C", "name": "ARABIC LETTER MARK", "action": "delete" },
+    { "cp": "U+200E", "name": "LEFT-TO-RIGHT MARK", "action": "delete" },
+    { "cp": "U+200F", "name": "RIGHT-TO-LEFT MARK", "action": "delete" },
+    { "cp": "U+E0000-U+E007F", "name": "TAG CHARACTERS (invisible ASCII smuggling)", "action": "delete" },
+    { "cp": "U+00A0", "name": "NO-BREAK SPACE", "action": "space" },
+    { "cp": "U+202F", "name": "NARROW NO-BREAK SPACE", "action": "space" },
+    { "cp": "U+2009", "name": "THIN SPACE", "action": "space" },
+    { "cp": "U+2007", "name": "FIGURE SPACE", "action": "space" },
+    { "cp": "U+2003", "name": "EM SPACE", "action": "space" },
+    { "cp": "U+2002", "name": "EN SPACE", "action": "space" }
+  ],
+  "typographic": [
+    { "from": "—", "name": "EM DASH", "to": ", " },
+    { "from": "–", "name": "EN DASH", "to": "-" },
+    { "from": "‘", "name": "LEFT SINGLE QUOTE", "to": "'" },
+    { "from": "’", "name": "RIGHT SINGLE QUOTE", "to": "'" },
+    { "from": "“", "name": "LEFT DOUBLE QUOTE", "to": "\"" },
+    { "from": "”", "name": "RIGHT DOUBLE QUOTE", "to": "\"" },
+    { "from": "…", "name": "HORIZONTAL ELLIPSIS", "to": "..." },
+    { "from": "′", "name": "PRIME", "to": "'" },
+    { "from": "·", "name": "MIDDLE DOT", "to": "-" },
+    { "from": "•", "name": "BULLET", "to": "-" },
+    { "from": "→", "name": "RIGHTWARDS ARROW", "to": "->" }
+  ],
+  "words": [
+    { "find": "delve into", "replace": "look at", "family": "verbs" },
+    { "find": "delve", "replace": "look", "family": "verbs" },
+    { "find": "leverage", "replace": "use", "family": "verbs" },
+    { "find": "leveraging", "replace": "using", "family": "verbs" },
+    { "find": "utilize", "replace": "use", "family": "verbs" },
+    { "find": "harness", "replace": "use", "family": "verbs", "mode": "flag" },
+    { "find": "unlock", "replace": "get", "family": "verbs", "mode": "flag" },
+    { "find": "unlock the power of", "replace": "use", "family": "verbs" },
+    { "find": "unpack", "replace": "explain", "family": "verbs", "mode": "flag" },
+    { "find": "elevate", "replace": "improve", "family": "verbs", "mode": "flag" },
+    { "find": "supercharge", "replace": "speed up", "family": "verbs" },
+    { "find": "democratize", "replace": "open up", "family": "verbs" },
+    { "find": "foster", "replace": "build", "family": "verbs" },
+    { "find": "streamline", "replace": "simplify", "family": "verbs" },
+    { "find": "revolutionize", "replace": "change", "family": "verbs" },
+    { "find": "empower", "replace": "let", "family": "verbs" },
+    { "find": "navigate the landscape of", "replace": "work with", "family": "phrases" },
+    { "find": "robust", "replace": "solid", "family": "adjectives" },
+    { "find": "seamless", "replace": "smooth", "family": "adjectives" },
+    { "find": "seamlessly", "replace": "smoothly", "family": "adjectives" },
+    { "find": "crucial", "replace": "important", "family": "adjectives" },
+    { "find": "pivotal", "replace": "key", "family": "adjectives" },
+    { "find": "cutting-edge", "replace": "new", "family": "adjectives" },
+    { "find": "state-of-the-art", "replace": "current", "family": "adjectives" },
+    { "find": "game-changing", "replace": "significant", "family": "adjectives" },
+    { "find": "game changer", "replace": "real shift", "family": "nouns" },
+    { "find": "paradigm shift", "replace": "real shift", "family": "nouns" },
+    { "find": "best-in-class", "replace": "strong", "family": "adjectives" },
+    { "find": "enterprise-grade", "replace": "production-ready", "family": "adjectives", "mode": "flag" },
+    { "find": "mission-critical", "replace": "critical", "family": "adjectives", "mode": "flag" },
+    { "find": "next-generation", "replace": "new", "family": "adjectives" },
+    { "find": "turnkey", "replace": "ready-to-use", "family": "adjectives" },
+    { "find": "future-proof", "replace": "durable", "family": "adjectives", "mode": "flag" },
+    { "find": "frictionless", "replace": "smooth", "family": "adjectives" },
+    { "find": "holistic", "replace": "complete", "family": "adjectives" },
+    { "find": "synergy", "replace": "overlap", "family": "nouns" },
+    { "find": "tapestry", "replace": "mix", "family": "nouns" },
+    { "find": "testament to", "replace": "proof of", "family": "phrases" },
+    { "find": "north star", "replace": "goal", "family": "nouns" },
+    { "find": "single pane of glass", "replace": "one dashboard", "family": "nouns", "mode": "flag" },
+    { "find": "moreover", "replace": "also", "family": "connectives" },
+    { "find": "furthermore", "replace": "also", "family": "connectives" },
+    { "find": "in today's fast-paced world", "replace": "", "family": "openers" },
+    { "find": "in today's digital landscape", "replace": "", "family": "openers" },
+    { "find": "in this day and age", "replace": "now", "family": "openers" },
+    { "find": "at the end of the day", "replace": "", "family": "closers" },
+    { "find": "when it comes to", "replace": "for", "family": "phrases" },
+    { "find": "the possibilities are endless", "replace": "", "family": "closers" },
+    { "find": "let that sink in", "replace": "", "family": "closers" },
+    { "find": "without further ado", "replace": "", "family": "openers" },
+    { "find": "buckle up", "replace": "", "family": "openers" },
+    { "find": "here's the thing", "replace": "", "family": "openers" },
+    { "find": "here's what i learned", "replace": "", "family": "openers" },
+    { "find": "it's important to note that", "replace": "", "family": "hedges" },
+    { "find": "it's worth noting that", "replace": "", "family": "hedges" },
+    { "find": "needless to say", "replace": "", "family": "hedges" },
+    { "find": "whether you're a beginner or an expert", "replace": "", "family": "phrases" },
+    { "find": "in conclusion", "replace": "", "family": "closers" },
+    { "find": "to summarize", "replace": "", "family": "closers" },
+    { "find": "moving forward", "replace": "next", "family": "connectives" },
+    { "find": "going forward", "replace": "next", "family": "connectives" },
+    { "find": "that being said", "replace": "still", "family": "connectives" },
+    { "find": "on the other hand", "replace": "but", "family": "connectives" },
+    { "find": "you're welcome", "replace": "", "family": "closers" },
+    { "find": "save this for later", "replace": "", "family": "closers" },
+    { "find": "who's with me", "replace": "", "family": "closers" },
+    { "find": "AI-powered", "replace": "AI-based", "family": "genai", "mode": "flag" },
+    { "find": "next-gen AI", "replace": "newer models", "family": "genai", "mode": "flag" }
+  ],
+  "phrases": [
+    { "find": "it goes without saying", "replace": "", "family": "hedges" }
+  ],
+  "structures": [
+    {
+      "id": "not-just",
+      "regex": "(?i)\\bit'?s not (?:just|only) [^.!?\\n]{2,60}[,.] it'?s\\b",
+      "name": "\"It's not just X, it's Y\"",
+      "fix": "Say the one thing you mean. Cut the setup half."
+    },
+    {
+      "id": "not-only",
+      "regex": "(?i)\\bnot only\\b[^.!?\\n]{2,80}\\bbut also\\b",
+      "name": "\"Not only X but also Y\"",
+      "fix": "Split into two sentences, or drop the weaker half."
+    },
+    {
+      "id": "isnt-about",
+      "regex": "(?i)\\b(?:this|it) is(?:n'?t| not) about [^.!?\\n]{2,60}[.!] it'?s about\\b",
+      "name": "\"It isn't about X. It's about Y.\"",
+      "fix": "Lead with Y. The reversal is the tell."
+    },
+    {
+      "id": "the-result",
+      "regex": "(?i)^\\s*(?:the result|the best part|the kicker|the catch)\\?\\s*$",
+      "name": "One-word rhetorical question line",
+      "fix": "Answer it inline instead of staging a reveal."
+    },
+    {
+      "id": "triad",
+      "regex": "(?i)\\b\\w+, \\w+, and \\w+\\.",
+      "name": "Rule-of-three triad",
+      "fix": "Two items or four. Three is the default machine rhythm."
+    },
+    {
+      "id": "rocket",
+      "regex": "[\\U0001F680\\U0001F525\\U0001F4A1\\u2728\\U0001F3AF]",
+      "name": "Rocket / fire / bulb / sparkle / dart emoji",
+      "fix": "One emoji max, and not one of these five."
+    },
+    {
+      "id": "hashtag-wall",
+      "regex": "(?:#\\w+[ \\t]*){5,}",
+      "name": "Hashtag wall (5+)",
+      "fix": "Three hashtags, specific to the post, not the topic."
+    },
+    {
+      "id": "as-an-ai",
+      "regex": "(?i)\\bas an ai\\b|\\bas a language model\\b",
+      "name": "Model self-reference",
+      "fix": "Delete the sentence."
+    },
+    {
+      "id": "in-summary",
+      "regex": "(?i)^\\s*(?:in summary|to summarize|in conclusion)\\b",
+      "name": "Essay-closer opener",
+      "fix": "A LinkedIn post doesn't need a conclusion paragraph."
+    },
+    {
+      "id": "engagement-bait",
+      "regex": "(?i)\\b(?:agree\\?|thoughts\\?|who else\\b|am i wrong\\?)\\s*$",
+      "name": "Reflex engagement bait",
+      "fix": "Ask a question only you could ask, about the specific claim above it."
+    },
+    {
+      "id": "buzzword-stack",
+      "regex": "(?i)\\b(?:ai-powered|next-gen(?:eration)?|cutting-edge|game-changing|enterprise-grade)\\b[^.!?\\n]*\\b(?:ai-powered|next-gen(?:eration)?|cutting-edge|game-changing|enterprise-grade)\\b",
+      "name": "Two or more buzzwords stacked in one sentence",
+      "fix": "Keep the specific claim, cut the adjectives around it."
+    }
+  ]
+}
