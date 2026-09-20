@@ -252,10 +252,31 @@ during cleanup (step 7).
 
 ## 5. Mux narration audio onto the video
 
+**Check `cue-sheet.json` for `final_hold_extended_by` first.** If present
+and nonzero, the video's real length (the concatenated segments from step
+3) is now longer than `voiceover_fit.wav` — the cue-sheet builder
+stretched the final asset (usually the CTA end-card) into a proper hold
+so it doesn't flash for a fraction of a second. In that case, **do not use
+`-shortest`** — it would silently crop the video back down to the audio's
+original length and undo that fix. Pad the audio with silence instead:
+
+```
+ffmpeg -y -i voiceover_fit.wav -af "apad=pad_dur=<final_hold_extended_by>" voiceover_padded.wav
+ffmpeg -y -i captioned.mp4 -i voiceover_padded.wav \
+  -c:v copy -c:a aac -b:a 192k episode.mp4
+```
+
+If `final_hold_extended_by` is absent or zero, mux directly (no padding
+needed, video and audio are already the same length):
+
 ```
 ffmpeg -y -i captioned.mp4 -i voiceover_fit.wav \
-  -c:v copy -c:a aac -b:a 192k -shortest episode.mp4
+  -c:v copy -c:a aac -b:a 192k episode.mp4
 ```
+
+Either way, don't reach for `-shortest` as a default — it's a silent
+truncation, not a real fix, for any length mismatch that shouldn't exist
+once the cue sheet and video track actually agree.
 
 Save `episode.mp4` at the episode folder root (not inside `visuals/` or
 `thumbnails/`).

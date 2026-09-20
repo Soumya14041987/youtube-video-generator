@@ -99,9 +99,29 @@ guessing and it's not per-tag phrase-searching either:
   fixing in `script.md` rather than relying on this fallback.
 - For every **`[CALLOUT:]`** tag: anchor timestamp = same rule (end of the
   immediately preceding paragraph, or 0.0 if nothing precedes it). Window
-  = `[anchor, min(anchor + 1.8, next paragraph's start timestamp or next
-  tag's anchor, whichever is sooner)]` — never let a callout's end run
-  past the next spoken content starting.
+  = `[anchor, min(anchor + 1.8, the NEXT CALLOUT's own anchor (if any),
+  total_duration)]`. **Do not cap a callout's end at the next paragraph or
+  asset tag's anchor** — a callout is a screen overlay burst, not a block
+  on narration; it's fine and normal for it to display briefly while the
+  next line is already being spoken underneath it (that's how the format
+  is meant to work). Capping against ordinary narration continuing caused
+  a real production bug: a callout landing right at the very start of a
+  section (where the next paragraph begins almost immediately) got
+  capped down to ~0.1s — imperceptible, worse than not showing it at all.
+  The only thing worth avoiding is two callouts visually overlapping each
+  other, hence capping against the *next callout's* anchor specifically.
+- **Minimum hold for the final asset (usually the CTA end-card):** if the
+  last asset tag's computed duration (its anchor to `total_duration`) is
+  under **3 seconds**, extend it to a full 3s hold and extend
+  `total_duration` (and every other total-duration reference, including
+  the last callout's cap if it applies) to match. This happens whenever
+  the script's final spoken word lands right at the tag's anchor with no
+  trailing silence in the audio — a real production case produced a
+  0.24s end-card flash, imperceptible on screen. Set
+  `"final_hold_extended_by": <seconds>` in the JSON output when this
+  triggers, so the video assembler knows it must pad the audio track with
+  silence for that many extra seconds rather than trusting
+  `voiceover.wav`'s raw duration as the video's final length.
 - **Precision note for script authors** (mention this in your report if
   you see it could improve accuracy): a callout tag anchors to the *end of
   the whole preceding paragraph*, not to a specific sentence inside it. If

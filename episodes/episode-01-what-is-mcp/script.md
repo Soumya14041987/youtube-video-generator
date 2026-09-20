@@ -1,43 +1,85 @@
-# Episode 01 — What is MCP (Model Context Protocol)?
+# Episode 01 — MCP Fundamentals, Components, Why & How (rebuild)
 
 ## Hook
 
-[CALLOUT: What is MCP?]
+[CALLOUT: MCP already changed once]
 
-[VISUAL: opening title card — dark background matching the channel template, channel wordmark, a simple abstract motif (a single glowing connector line linking three plain icon shapes: a chat/agent bubble, a small hub node, a generic tool/plug icon) with no specific product logos or real system names on it yet — this is a teaser card, not the architecture explainer, so it must not resemble or preview the detailed DevOps diagram that appears later]
+[VISUAL: a row of 4-5 generic "MCP Explained" video thumbnail cards on screen, then a red "OUTDATED" stamp slams down on one of them]
 
-Your AI coding assistant just read your deployment logs, cross-referenced your last three commits, and told you exactly why the build broke — without a developer writing a single custom integration for any of it. That's not a smarter model. That's MCP.
+Almost every MCP explainer you'll find today teaches a version of the protocol that no longer exists. Here's what MCP actually is right now — fundamentals, components, why it exists, and how it really works.
 
 ## Core concept
 
-MCP stands for Model Context Protocol. Anthropic open-sourced it on November 25th, 2024, as a standard way to connect AI models and agents to external tools, data sources, and systems. It's a protocol, not a product — like HTTP, or USB-C — and it isn't owned or gatekept by any single vendor.
+[VISUAL: MCP logo, "Model Context Protocol" title, small subtext card: "open standard · Anthropic · November 2024"]
 
-Here's the problem it was built to kill. Before MCP, every AI application that wanted to talk to every tool needed its own custom, one-off integration. Ten AI apps, ten data sources — that's potentially a hundred bespoke connectors. Engineers call this the M-by-N integration problem: multiply your assistants by your tools, and that's how many brittle, hand-built bridges someone has to maintain. MCP turns that into M-plus-N. Build one MCP-compliant client, build one MCP-compliant server, and they interoperate — no custom glue in between.
+MCP stands for Model Context Protocol. It's an open standard, created by Anthropic in November 2024, that gives AI applications one consistent way to connect to external tools, data, and systems — instead of every app writing its own one-off integration for every tool.
 
-[VISUAL: MCP architecture from a DevOps perspective — an MCP host (a coding assistant like Claude Code) running an MCP client, connected over the protocol to an MCP server that exposes tools/resources; the server in turn connects to real DevOps systems: a cloud provider's deployment logs, a Git repository's recent commits, and a CI/CD pipeline status feed. Show the request flow: host asks a question, client calls the server, server pulls from cloud logs + git + CI/CD, response flows back — all through one shared protocol, not three custom scripts.]
+[VISUAL: 5 labeled AI-app icons in a row (App 1 through App 5) connected by tangled crossing lines to 5 labeled tool icons in a row (Tool 1 through Tool 5) — every single app-tool pair has its own line, 25 lines total, visibly chaotic, a small caption reading "5 × 5 = 25 integrations"]
 
-The architecture has three pieces. An MCP host is the application you actually interact with — Claude Desktop, Claude Code, any agent-capable app. Inside it, an MCP client manages the connection. On the other end, an MCP server exposes specific capabilities in a standardized way: tools the model can call, resources it can read, prompts it can reuse. The model doesn't need custom code to understand your cloud provider's logs or your CI/CD pipeline — it just needs an MCP server sitting in front of them, speaking the same protocol every other server speaks.
+Here's why that mattered. Connect M AI apps to N tools the old way, and you need M times N custom connectors. Five apps, five tools — that's twenty-five separate integrations, each one hand-built, each one maintained on its own.
 
-Picture a second case: a support-ops agent that looks up a customer in a CRM through one MCP server, then checks an order status in a completely different backend through another — neither integration written specifically for that bot. Same protocol, two unrelated systems, zero bespoke glue code either time.
+[ANIMATION: the same 25 tangled lines collapsing into a clean hub-and-spoke — all 5 apps connect once to a central MCP hub, MCP connects once to each of the 5 tools, the "5 × 5 = 25" caption fading out as a new "5 + 5 = 10" caption fades in]
 
-[ANIMATION: M-by-N integration problem collapsing into M-plus-N — start with a tangled web of many-to-many connector lines between a row of AI-app icons and a row of tool icons (databases, cloud, CI/CD, ticketing), lines multiplying and crossing chaotically; then wipe/transform into a clean single hub-and-spoke: all AI apps connect to one MCP layer, which connects once to each tool. End state clearly less cluttered than the start state.]
+MCP turns that into M plus N. Same five apps, five tools — now just ten connections, not twenty-five. Everyone builds against one shared interface once.
+
+[VISUAL: three incompatible phone charger types shown side by side, then merging into a single USB-C connector]
+
+It's the same fix as USB-C replacing a drawer full of incompatible chargers — one interface, works with everything.
+
+[VISUAL: three labeled boxes left to right: Host (e.g. an IDE or Claude Desktop) → Client (inside the host) → Server (external program)]
+
+The architecture has three roles. A host is the application you actually use. Inside it, a client manages a one-to-one connection to a server — a separate program that exposes real capabilities.
+
+[VISUAL: three-column card: "Tools — callable actions" / "Resources — read-only data" / "Prompts — reusable templates"]
+
+A server exposes three things: tools the model can call, resources it can read, and prompts that guide how to use them well. Tools have side effects — send an email, create a ticket. Resources don't — they're read-only, closer to a GET request than an action.
+
+[VISUAL: a coding assistant host icon asking a question, an arrow to a client, an arrow to a server labeled "database", an arrow back with real query results]
+
+Picture a coding assistant asking "why did the last deploy fail." The client sends that through to a database server as a tool call, the server actually queries real data, and the answer comes back as a real result — not a guess based on training data.
 
 ## My angle
 
-Most explainers stop at "USB-C for AI" and leave it there. Here's what almost none of them mention: MCP's most consequential change didn't happen at launch — it happened on July 28th, 2026, with the protocol's biggest spec revision yet.
+[VISUAL: sequence diagram — client sends "initialize", server responds with capabilities, client sends "initialized", a session ID tag attaches to the connection]
 
-The original MCP was stateful — a session-based handshake, sticky connections, the kind of thing that's fine for a demo and painful in production. The July 2026 spec removed that. Protocol version and client capabilities now travel per-request instead of through a persistent session, and authorization got a stricter, hardened rewrite. The practical result: an MCP server can now sit behind a completely standard load balancer, with no sticky sessions required — the same way any ordinary stateless web service scales in Kubernetes or behind a CI/CD-deployed fleet.
+Here's the part almost no current explainer gets right. MCP originally worked like this: a client and server shook hands — initialize, then initialized — and the server pinned that whole session to one specific instance with a session ID.
 
-[CALLOUT: MCP just became boring infrastructure]
+[ANIMATION: adoption timeline building left to right — "Mar 2025: OpenAI" → "Apr 2025: Google DeepMind" → "May 2025: Microsoft + GitHub" → "Dec 2025: Linux Foundation's Agentic AI Foundation"]
 
-That sounds like a downgrade in excitement. It's the opposite. "Boring infrastructure" is exactly the property an SRE wants before something goes anywhere near production. Before this change, running MCP at real scale meant fighting session affinity — pinning every client to the one server instance holding its session state, then hoping a rolling deploy didn't drop connections mid-handshake. That's the exact class of problem service meshes and API gateways were built to route around, and MCP's stateful design fought against all of it. Strip the session out, and an MCP server becomes just another stateless HTTP workload — the same deployment pattern already sitting behind every other production service you run, no special-cased infrastructure required.
+That handshake model is what the entire industry adopted through 2025 — OpenAI, Google DeepMind, Microsoft and GitHub, eventually governance itself moving to the Linux Foundation.
 
-Nearly every explainer, video or written, still tells MCP's story through its November 2024 stateful origins. The version of this story that actually matters to a DevOps audience is the one where MCP stopped being a clever AI demo protocol and started being something you can put behind a load balancer without thinking twice.
+[VISUAL: a server box pinned by a thick line to one server instance, a load balancer icon with a red X trying to route around it]
 
-[ANIMATION: adoption timeline building left to right — nodes appearing one at a time in sequence: "Nov 2024 — Anthropic open-sources MCP" → "Mar 2025 — OpenAI adopts it" → "Apr 2025 — Google DeepMind (Gemini)" → "May 2025 — Microsoft + GitHub join steering committee" → "Dec 2025 — donated to the Agentic AI Foundation (Linux Foundation)" → "Jul 2026 — stateless spec rewrite". Each node lights up after the previous one, ending with all six connected on one timeline.]
+But mass adoption exposed a second problem nobody talks about: a session pinned to one server instance can't sit behind a normal load balancer. That's not how anything scales in production.
+
+[VISUAL: a rolling deployment diagram — old server instance draining connections while a new one spins up, a dropped-connection icon on the old instance]
+
+Roll out a new version the ordinary way, and every session still pinned to the old instance either has to wait or gets dropped mid-request. Fine for a demo. Not fine for something real teams depend on.
+
+[ANIMATION: the initialize/initialized handshake and session-ID tag both dissolving, replaced by a single self-contained request carrying its own version info in a small "_meta" tag]
+
+So in July 2026, MCP shipped its biggest rewrite yet. The handshake is gone. The session ID is gone. Every request now describes itself — protocol version and capabilities travel with the request itself, not a stored session.
+
+[VISUAL: a "tools/list" request card with a small badge reading "cacheable"]
+
+List calls can now be cached. Routing can happen from the request headers alone.
+
+[VISUAL: a "core protocol" box with a branch labeled "Extensions" pointing to two smaller boxes: "Tasks" and "MCP Apps"]
+
+The component set evolved too. Tasks — for work that takes longer than one request-response cycle, checked via polling instead of holding a connection open — used to be an experimental core feature. Now it's a proper extension, redesigned around the same stateless model as everything else. MCP Apps, for servers that ship their own UI, got the same promotion. Extensions can now be built and adopted independently, without every implementation needing to support everything in core.
+
+[VISUAL: three small labeled tags — "Roots", "Sampling", "Logging" — each stamped "deprecated"]
+
+A few original pieces, Roots, Sampling, and Logging, are being phased out over the next year.
+
+[CALLOUT: The rewrite solved a problem most explainers skip]
+
+[VISUAL: a four-step causal chain diagram: "M×N problem" → "MCP" → "mass adoption" → "stateless rewrite"]
+
+This wasn't a cosmetic update. The M-by-N problem is why MCP exists. Mass adoption is why MCP had to change again. Understanding both is understanding MCP as it actually works today, not as it launched.
 
 ## CTA
 
-If you're building with AI agents in a real Cloud or DevOps stack, this is the layer worth understanding before you wire up your next integration. Follow for the next one — we're covering Agentic AI, MCP, AIOps, and DevSecOps every week.
+If you're building with MCP right now, build against the current spec, not the one every tutorial still shows. Follow for the next stop on this MCP series — we're going component by component, zero to hero.
 
-[VISUAL: end-card — channel wordmark centered top, below it a compact 4-row block: "LinkedIn · Medium · AWS Builder Center · X — @AIWithSoumya", white background, same simple template every episode uses]
+[VISUAL: end-card — channel wordmark centered top, below it a compact 4-row block: "LinkedIn: aiops-genai-developer · Medium: @soumya14041987 · AWS Builder Center · X: @AIWithSoumya", white background, same simple template every episode uses]

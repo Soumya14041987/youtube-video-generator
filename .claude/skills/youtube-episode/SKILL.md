@@ -101,14 +101,34 @@ Write `script.md` using this fixed structure, and no other structure:
    missing from existing coverage. If the brief found no real gap, say so
    explicitly rather than inventing one.
 4. **CTA** — follow/next-episode tie-in. The CTA's `[VISUAL:]` end-card
-   must show all 4 platforms on screen — a compact 4-row block (short
-   labels, not full URLs, they're unreadable at video size and the full
-   ones live in `metadata.md`'s Connect footer, step 9):
+   must show all 5 platforms on screen (LinkedIn, Medium, AWS Builder
+   Center, X, GitHub) as a **dark-themed card grid** — not the old plain
+   white-background text list, which looked disconnected from every other
+   dark-bg frame in the video and undersold the channel. **The tag text
+   must spell out the correct handle for each platform individually,
+   verbatim, exactly as below, and must spell out the channel wordmark
+   text explicitly too — never just say "channel wordmark" and leave the
+   actual text to be inferred.** Three real production bugs came from
+   under-specifying this tag: (1) writing only `LinkedIn · Medium · AWS
+   Builder Center · X — @AIWithSoumya` let the asset builder reuse the one
+   visible handle for all platforms, mislabeling LinkedIn and Medium; (2)
+   writing "channel wordmark" without its literal text produced an
+   end-card headlined with the *episode's own series title* instead of the
+   channel name, and a bare AWS Builder Center row with no value; (3) a
+   plain white-bg text-list design read as generic and inconsistent with
+   the rest of the video. The asset builder has no other source for any of
+   this at generation time — `metadata.md`'s Connect footer, which has the
+   correct values, is written later in step 9. Copy this exact tag text
+   every time, don't paraphrase or drop any value down to just a platform
+   name:
    ```
-   LinkedIn · Medium · AWS Builder Center · X — @AIWithSoumya
+   [VISUAL: end-card — dark #0d1117 background (matching every other frame in the video, not white), the literal text "AI WITH SOUMYA" as a large centered channel wordmark (this is the channel name, not the episode or series title — never substitute the episode/playlist title here) with a thin accent-color underline beneath it, a small series tag below that reading "MCP : ZERO TO HERO", then a horizontal row of 5 rounded platform cards, each with a colored top accent bar in that platform's brand color, a circular monogram/initial in the same color, the platform name, and its handle: LinkedIn (blue, aiops-genai-developer) · Medium (white, @soumya14041987) · AWS Builder Center (orange, builder.aws.com) · X (white, @AIWithSoumya) · GitHub (light blue, mcp-zero-to-hero) — every card gets a label AND a value, none bare — and a bold accent-outlined CTA box beneath the cards reading "FOLLOW FOR THE NEXT EPISODE". Same design every episode uses.]
    ```
    or stacked as 4 short lines if that reads better at the format's aspect
-   ratio — channel wordmark above it, same template as every other visual.
+   ratio (still one label-and-value pair per line, never just a platform
+   name with nothing after it). These 4 values
+   are fixed for this channel — never invent or infer a handle for any of
+   them.
 
 Inline three kinds of tags — the handoff contract to the asset builder and
 video assembler, so be concrete (not just "diagram here"):
@@ -229,8 +249,10 @@ same trusted context:
    assembler relies on.
 2. Read `GEMINI_API_KEY` from `.env` yourself and call the Gemini TTS
    endpoint directly (`gemini-2.5-flash-preview-tts`, `responseModalities:
-   ["AUDIO"]`, `voiceConfig.prebuiltVoiceConfig.voiceName: "Kore"` by
-   default) — use Python's `requests` library, not bare `urllib`, if you hit
+   ["AUDIO"]`, `voiceConfig.prebuiltVoiceConfig.voiceName: "Puck"` by
+   default — a male voice, the channel's standing choice from episode 3
+   onward; episodes 1-2 used the earlier default, "Kore," a female voice)
+   — use Python's `requests` library, not bare `urllib`, if you hit
    an SSL cert verification error. Decode the base64 PCM response and write
    it as a real WAV (24kHz, 16-bit, mono) to `voiceover.wav`.
 3. Never print the key value anywhere in your output.
@@ -333,6 +355,7 @@ Write `metadata.md` with:
   Medium: https://medium.com/@soumya14041987
   AWS Builder Center: https://builder.aws.com/
   X: https://x.com/AIWithSoumya
+  GitHub (series code + episode assets): https://github.com/Soumya14041987/mcp-zero-to-hero
   ```
 - a recommended day/time slot
 

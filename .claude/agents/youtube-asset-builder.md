@@ -123,8 +123,15 @@ clever. Every generated image uses:
 
 Prefer a small, throwaway Python/PIL script run via `Bash` per asset (or one
 script looped over all tags) rather than hand-crafting each file — write it
-to the episode's own folder (e.g. a scratch `_render.py`) so it's inspectable
-if something looks wrong, and it's fine to leave it there or delete it after.
+to a scratch location (your session's scratchpad, not the episode folder)
+so it's inspectable if something looks wrong. **Delete these helper
+scripts (and any `__pycache__`) before finishing — do not leave them in
+the episode folder.** The episode folder is a shipped deliverable, not a
+workspace; a `_render_visuals.py` or `_common.py` left behind is exactly
+the kind of scatter that's been flagged before. If a script would
+genuinely help debug a specific failure you're reporting, keep only that
+one and say so explicitly in your report — don't leave a full working set
+"just in case."
 
 ## Text rendering rules (avoid overflow/clipping)
 
@@ -154,6 +161,8 @@ claim the style was followed if a required element is missing.
 - All files actually landed under the given episode folder's `visuals/` and
   `thumbnails/` subfolders (create them if they don't exist)
 - No leftover scratch frame folders from animation rendering
+- No leftover helper/render scripts (`_common.py`, `_render_*.py`) or
+  `__pycache__` in the episode folder — only the actual asset files
 - No two text/element labels overlapping in any diagram (see collision
   rule above)
 
