@@ -1,81 +1,83 @@
-# Episode 02 — How to Build Your First MCP Server
+# Episode 02 — MCP: Server, Client, Tools, Resources, Prompts & Discovery
 
 ## Hook
 
-[CALLOUT: How an MCP server actually gets built]
+[CALLOUT: MCP servers expose three things, and clients discover them one way]
 
-[VISUAL: a row of "build an MCP server" video thumbnails, all screen-recorded code editors, then a text card: "none of them are built like this one"]
+[VISUAL: three stacked cards — "Tools" (wrench icon) / "Resources" (folder icon) / "Prompts" (lightbulb icon) — with a downward arrow to a single "Discovery" card]
 
-You understand what MCP is. Here's how a server actually gets built — not with a screen recording of an IDE, but with the three conversations that make one work.
+You know what MCP is. Here's what a server actually exposes, how a client finds it, and how they talk — not the old handshake tutorials. The 2026 spec changed everything.
 
-## Core concept
+## Core Concept
 
-[VISUAL: quick recap card — three boxes: Host, Client, Server, small labels "you already know this from Episode 1"]
+[VISUAL: quick recap — "Server" box on left with three icons (tools/resources/prompts), "Client" box on right, double-headed arrow labeled "JSON-RPC 2.0" between them]
 
-Quick recap: a host runs a client, the client talks to a server, the server exposes tools, resources, and prompts. Today we're building one specific server.
+A server exposes three primitives: **tools** (actions the model invokes), **resources** (read-only context data), and **prompts** (reusable instruction templates). The client connects, discovers what's available, and uses them. That's the whole shape.
 
-[VISUAL: a labeled server box — "AI Developer Assistant" — with 4 small tool icons beneath it: inspect a Git repo, read files, search code, run a controlled system command]
+[VISUAL: a "tool" card — name "list_files", description "List files in a directory", inputSchema box showing {path: string}]
 
-Call it an AI Developer Assistant. It inspects Git repositories, reads files, searches code, and runs a small set of controlled developer operations. Not a toy weather server — something a real coding assistant would actually use.
+A **tool** is a callable action. It has a name, a description, and a JSON Schema defining what inputs it takes. The model reads the schema and decides whether to call it.
 
-[VISUAL: three-panel roadmap card: "1. Connect" / "2. Discover" / "3. Call a tool"]
+[VISUAL: a "resource" card next to it — name "docs.md", description "Current documentation", uri: "file:///docs" — labeled "Read-only" in corner]
 
-Three conversations build this: connecting, discovering what's available, and calling a tool. Here's what each one actually looks like today — not in 2024.
+A **resource** is read-only context. Unlike tools (which the model invokes), resources are data the application pulls and includes in the prompt. Think file contents, database records, documentation.
 
-[VISUAL: a laptop icon labeled "your machine" running a small server process, a dotted line labeled "stdio" connecting it to a host app icon]
+[VISUAL: a "prompt" card — name "analyze_code", description "Analyze this code block", arguments: {language, code}]
 
-You build and test this locally first. The server runs as a plain process on your machine, talking to the host over a simple local transport before anything touches a network.
+A **prompt** is a reusable instruction template. The server stores a prompt; the client surfaces it as a command or menu item. When called, the server returns composed system and user messages — ready to inject into the conversation.
 
-[VISUAL: a magnifying glass over a raw JSON-RPC message, labeled "this is what you actually debug"]
+## My Angle
 
-Debugging one of these isn't mysterious — you're reading the same JSON-RPC messages the client and server exchange, checking that a tool's declared inputs match what you're actually sending.
+[VISUAL: a laptop with a server process box on it, labeled "stdio" — a dotted line going to a host app (IDE/Claude Code) labeled "Client", with a small note "July 2026: no session ID, no handshake"]
 
-## My angle
+You build this locally first. Server runs as a plain process, talking to the client over stdio — JSON-RPC messages, one per line. No session negotiation. No protocol handshake.
 
-[VISUAL: old handshake diagram (initialize → initialized → session ID) with a red "X" stamped over it, label "most tutorials still teach this"]
+[ANIMATION: a client icon sending a request box labeled "tools/list" to the server, the server immediately returning a response with a checkbox "✓ Cached for 30 seconds (ttlMs: 30000)"]
 
-Most "build an MCP server" tutorials still show a connection handshake and a session ID pinning you to one server instance. That model doesn't exist anymore.
+First thing the client does: ask for a list of tools. The server responds with names, descriptions, and input schemas. That response is cacheable — marked with `ttlMs` (time-to-live). Clients cache it, so repeated tool discovery hits memory, not the server.
 
-[ANIMATION: a client and server connecting with a single self-describing request — no handshake step, no session ID tag appearing — a "connected" checkmark lighting up immediately]
+[VISUAL: side-by-side comparison — OLD on left: "Server remembers your session_id" with a brain icon, NEW on right: "Server hands you a handle (stateless)" with a ticket/token icon]
 
-Today, a client just sends a request. No handshake. No session to negotiate. Any request can hit any server instance behind a load balancer.
+The old model had servers remember session IDs. The 2026 spec flipped it: servers are stateless. If you need to carry state across tool calls, the server hands you a **handle** — an opaque token you pass back as an ordinary argument on your next call.
 
-[VISUAL: "tools/list" request card, response card listing 4 tools, small badges "cacheable" and "same list for everyone"]
+[ANIMATION: sequence — Step 1: tool call `create_session()` returns {handle: "sess_abc"}; Step 2: next call `run_query(handle="sess_abc", query="SELECT...") returns results; Step 3: final call with same handle to `close_session(handle="sess_abc")`]
 
-Second conversation: discovery. The client asks what's available with a tools list request. Each tool in that list carries a name, a description, and a JSON schema for its inputs — that's how the client knows what arguments to send before ever calling it.
+Example: create a session, get back a handle. Run a query passing that handle. Close the session, still passing the handle. The server never has to remember you — you carry proof of what you're doing, every time.
 
-[VISUAL: one tool entry expanded — name "inspect_repo", description "reads a Git repository's structure", input schema showing a single "path" field]
+[CALLOUT: The handle is the new session ID — but visible in the conversation]
 
-Take the repo-inspection tool. Its schema says it takes one input, a path. That's the whole contract — no hidden setup, no separate registration step for the client to worry about.
+[VISUAL: three-icon sequence — Icon 1 "Server/discover" (optional), Icon 2 "tools/list, resources/list, prompts/list" (discovery), Icon 3 "tools/call" (execution) — with arrows between them]
 
-The response is cacheable now too, and — this matters — it's the same list no matter who's asking, not a per-connection answer.
+The discovery sequence for a client: optionally call `server/discover` to learn capabilities and protocol version. Always call `tools/list`, `resources/list`, `prompts/list` to see what's available. Then call tools with `tools/call`, passing handles from earlier responses when needed.
 
-[ANIMATION: a "tools/call" request labeled "list files in this repo" flowing into the server, a response flowing back containing both the file list AND a small glowing "handle" token]
+[VISUAL: a gateway/proxy box with two columns — left column: request goes in (JSON-RPC call), right column: routers send it to server-instance-1, server-instance-2, server-instance-3 (arrows fan out with no session stickiness)]
 
-Third conversation, and the one that actually trips people up: calling a tool. Ask the Dev Assistant to list files in a repo, and the response comes back with the file list — plus a handle. A small token standing in for "the repo you just opened."
+Because servers are stateless, you can put them behind a plain round-robin load balancer. Any request hits any instance. No sticky sessions, no shared state store. Scale horizontally, treat servers like cattle.
 
-[VISUAL: a second "tools/call" labeled "read file X" with that same handle token attached as an argument, arrow into the server]
+[VISUAL: a localhost server diagram — "Your machine" box containing "MCP Server Process" with stdio pipes to "Host App (Claude Code, Cursor, VS Code)" labeled "Development local stdio transport"]
 
-Want to read a file from that same repo next? You pass the handle back as an ordinary argument on your next call.
+Locally, you use stdio transport: stdin and stdout for JSON-RPC. No HTTP layer, no network overhead. Press a button, send a JSON request, read the response. Perfect for CLI tools, editor plugins, and testing.
 
-It's the same pattern for every follow-up. Search the code in that repo next, and the search tool takes the same handle as an input — the server never has to remember which repo you were working in, because you're telling it, every single time.
+[ANIMATION: a JSON-RPC request box flowing into server, a JSON response flowing back, both labeled with line-by-line breakdown: `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{...}}` → response with `{"id":1,"result":{...}}`]
 
-[CALLOUT: The server doesn't remember you — you remind it]
+The protocol is just JSON-RPC 2.0 over pipes. Each request has `jsonrpc: "2.0"`, `id` (to match request to response), `method`, and `params`. Server responds with matching `id` and `result` or `error`. Debug by logging stdin/stdout to stderr.
 
-[VISUAL: side-by-side comparison — left "OLD: server remembers your session" with a brain icon, right "NOW: server hands you a token and forgets" with a ticket-stub icon]
+[VISUAL: a "Resources/read" card — GET `/resources/read?uri=file:///docs.md"`, response contains file contents, plus `{ttlMs: 60000, cacheScope: "public"}` — labeled "Client-side cached""]
 
-Old tutorials have the server remember your session. The current spec has the server hand you a token and forget you existed. That's the actual mental shift — not OAuth, not remote hosting, this.
+Resources are fetched via `resources/read` — just like tools/list, they carry cache hints. A client reads a resource once, caches it for the TTL duration, then fetches fresh if older.
 
-[ANIMATION: a gateway/proxy box inspecting two small header tags, "Mcp-Method" and "Mcp-Name", routing arrows fanning out to different backend server instances without opening the message body]
+[VISUAL: a "Prompts/get" call card — `{prompt_name: "analyze_code", arguments: {language: "python", code: "..."}}`, response: `{system: "You are an expert Python analyzer...", messages: [{role: "user", content: "Analyze this code..."}]}`]
 
-One more piece worth knowing, since a Dev Assistant doing real Git and system operations is exactly the kind of thing you'd put behind real infrastructure: new routing headers let a gateway see which tool is being called without reading the full request body at all. It can block, log, or route a "run_system_command" call differently from a harmless "read_file" call, just by looking at the header.
+When a client calls a prompt via `prompts/get`, the server returns a pre-composed system message and user message block. The client injects these into the conversation, letting the model work with domain knowledge the server encodes.
 
-[VISUAL: the Dev Assistant server box connecting into a real host app icon labeled "Claude Code / your IDE", a config file icon beside it]
+[VISUAL: comparison table — "Tool" (model invokes, active), "Resource" (client pulls, passive), "Prompt" (server provides, templated) — each with icon and use-case example]
 
-Once it works locally, connecting it to a real AI application is a config step, not new code — you point the host at your server process, and every tool you built shows up in that discovery list automatically.
+Three primitives, three patterns: tools are active (model-driven), resources are passive (client-driven), prompts are templates (server-provided). Together, they let a server offer rich, composable capabilities without protocol-level state.
 
 ## CTA
 
-That's the shape of building one: connect without a handshake, discover a cacheable tool list, call a tool and carry its handle forward yourself. Follow for the next stop in the series — what the client side has to implement to make all three of these conversations happen.
+[VISUAL: checklist card — "✓ Servers expose tools, resources, prompts" / "✓ Clients discover via list() calls (cacheable)" / "✓ Tools carry handles for stateless state" / "✓ Build locally via stdio JSON-RPC" / "✓ Deploy behind load balancers, no sessions"]
 
-[VISUAL: end-card — the literal text "AI WITH SOUMYA" as the centered channel wordmark (this is the channel name, not the episode or series title), a thin accent-color underline beneath it, then a compact 4-row block below: "LinkedIn: aiops-genai-developer · Medium: @soumya14041987 · AWS Builder Center: builder.aws.com · X: @AIWithSoumya" — every row gets a label AND a value, none bare, white background, same simple template every episode uses]
+That's the shape of MCP in 2026: discover, cache, call — with handles threading state through every request. Follow for the next episode, where we show a real server built with all three primitives.
+
+[VISUAL: end-card — dark #0d1117 background (matching every other frame in the video, not white), the literal text "AI WITH SOUMYA" as a large centered channel wordmark (this is the channel name, not the episode or series title — never substitute the episode/playlist title here) with a thin accent-color underline beneath it, a small series tag below that reading "MCP : ZERO TO HERO", then a horizontal row of 5 rounded platform cards, each with a colored top accent bar in that platform's brand color, a circular monogram/initial in the same color, the platform name, and its handle: LinkedIn (blue, aiops-genai-developer) · Medium (white, @soumya14041987) · AWS Builder Center (orange, builder.aws.com) · X (white, @AIWithSoumya) · GitHub (light blue, mcp-zero-to-hero) — every card gets a label AND a value, none bare — and a bold accent-outlined CTA box beneath the cards reading "FOLLOW FOR THE NEXT EPISODE". Same design every episode uses.]
