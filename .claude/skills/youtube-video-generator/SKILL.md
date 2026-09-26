@@ -38,12 +38,30 @@ via AskUserQuestion (2 questions, 4 options each) before proceeding.
 
 ## Phase 1: Input Resolution (Steps 1–5)
 
-### 1. Classify input
+### 1. Classify input + Workflow Gate
 
-- Structured block (Topic: / URL: / Title: fields) → step 2.
-- URL only → step 3.
-- Bare topic → step 4.
-- Empty / "what's next" → step 5.
+First, ask one orienting question so the user lands in the right flow:
+
+```
+AskUserQuestion:
+  Q: "How do you want to start this video?"
+  Header: "Workflow"
+  Options:
+    - "Fresh topic I have in mind"
+      (description: "I'll give you a topic — you research and build everything")
+    - "I have a URL or reference to base it on"
+      (description: "Paste a link, announcement, or docs page — I'll extract and build from it")
+    - "Predict my next video from my playlist"
+      (description: "Read my playlists/ folder and pick the next planned episode")
+    - "I have a draft script to finish"
+      (description: "I'll paste a partial script — you fill gaps and generate assets")
+```
+
+Route based on answer:
+- Fresh topic → step 4.
+- URL → step 3.
+- Predict next → step 5.
+- Draft script → step 4 (treat pasted content as DRAFT mode input).
 
 ### 2. Structured input
 
@@ -74,13 +92,51 @@ line before proceeding.
 
 ## Phase 2: Orchestration (Steps 6–15)
 
-### 6. Resolve episode details + read continuity
+### 6. Resolve episode details + read continuity — Video Idea Gate
 
 - Read `series-log.md`: detect duplicate, assign next episode number NN.
 - Detect input mode (SHORT or DRAFT).
-- If Audience + Duration not supplied in structured input, ask user
-  (AskUserQuestion, 2 questions).
-- Record: episode number, input mode, duration, audience level.
+
+If Audience + Duration not already supplied, ask both together with two
+additional intent questions — all four in one AskUserQuestion call:
+
+```
+AskUserQuestion (4 questions):
+
+  Q1: "Who is this video for?"
+  Header: "Audience"
+  Options:
+    - "Complete beginners — assume zero prior knowledge"
+    - "Intermediate — familiar with the field, new to this topic"
+    - "Advanced — practitioners who want depth and nuance"
+    - "Mixed — pitch to beginners, reward the advanced viewer too"
+
+  Q2: "How long should this video be?"
+  Header: "Duration"
+  Options:
+    - "Short — 60 to 90 seconds (YouTube Shorts or punchy explainer)"
+    - "Medium — 3 to 5 minutes (solid tutorial, most common)"
+    - "Long — 8 to 12 minutes (deep dive, step-by-step walkthrough)"
+    - "Let the content decide — script first, trim to fit"
+
+  Q3: "What is the primary goal of this video?"
+  Header: "Goal"
+  Options:
+    - "Explain a concept clearly (education / credibility)"
+    - "Show how to do something step by step (tutorial / retention)"
+    - "Cover breaking news or a trend (timeliness / discovery)"
+    - "Share my take or opinion (personality / community)"
+
+  Q4: "Where did this topic come from?"
+  Header: "Origin"
+  Options:
+    - "My own expertise — I know this well"
+    - "A gap I spotted in existing YouTube coverage"
+    - "Audience question or request"
+    - "It is the next episode in my planned series"
+```
+
+Record: episode number, input mode, duration, audience level, goal, origin.
 
 ### 7. Spawn Research Agent (youtube-researcher)
 
@@ -120,10 +176,35 @@ For each image search term from step 7:
 
 These become candidate overlay/background assets for the asset builder.
 
-### 9. Synthesize Script
+### 9. Synthesize Script — Scripting Gate
+
+Before writing, ask two scripting direction questions:
+
+```
+AskUserQuestion (2 questions):
+
+  Q1: "What script style should this video use?"
+  Header: "Script Style"
+  Options:
+    - "Fast punchy narrator — short sentences, one idea per cut (Fireship style)"
+    - "Step-by-step tutorial — numbered beats, show then explain (Ali Abdaal style)"
+    - "Deep explainer — analogies, diagrams, build understanding slowly (ByteByteGo style)"
+    - "Conversational take — I speak to camera, share opinions and examples"
+
+  Q2: "What kind of hook should open the first 5 seconds?"
+  Header: "Hook Type"
+  Options:
+    - "Question hook — open with a question the viewer feels they should already know"
+    - "Surprising stat or fact — lead with a number or finding that reframes the topic"
+    - "Bold contrarian claim — state something most people believe is wrong"
+    - "Jump straight in — no preamble, first sentence is the first lesson"
+```
+
+Record script_style and hook_type. Use them to shape tone, sentence length,
+and the opening lines of script.md.
 
 **Local step — no subagent.** Write `script.md` using research brief +
-audience level + duration + web asset references.
+audience level + duration + web asset references + script_style + hook_type.
 
 Fixed structure:
 1. **Hook** (3s, states the question — designed as pattern interrupt)
@@ -150,7 +231,33 @@ Fixed structure:
 - Beginner: every abstract claim needs a concrete visual anchor.
 - Count spoken words; stay within step-6 budget.
 
-### 10. Delegate Asset Generation (Archify + Asset Builder)
+### 10. Delegate Asset Generation — Image Generation Gate
+
+Before spawning asset agents, ask two visual direction questions:
+
+```
+AskUserQuestion (2 questions):
+
+  Q1: "What visual style should this video use?"
+  Header: "Visual Style"
+  Options:
+    - "Dark code aesthetic — dark background, green/white diagrams, monospace labels (default)"
+    - "Clean flat illustrations — light background, minimal color palette, bold shapes"
+    - "Real architecture diagrams — named AWS/Kubernetes/cloud components, accurate topology"
+    - "Screenshot-heavy — real product UIs and terminal output as primary visuals"
+
+  Q2: "How many visual changes should the viewer see?"
+  Header: "Visual Density"
+  Options:
+    - "One key diagram — one strong visual that stays and builds on screen"
+    - "Standard — one new visual or callout roughly every 12 seconds"
+    - "High density — visual change every 5 to 8 seconds (fast-cut YouTube style)"
+    - "Script decides — follow the visual tags I wrote, do not adjust"
+```
+
+Pass visual_style and visual_density to both subagents. If visual_style is
+"Screenshot-heavy", bias web asset fetching in step 8 toward real product
+screenshots over stock diagrams.
 
 **First**: Identify `[VISUAL:]` tags naming real system/cloud/pipeline
 components. Skip tags marked as `web-XX.png` (already fetched in step 8).
@@ -168,7 +275,32 @@ visuals + animations + thumbnails.
 numbers to skip, web asset filenames to skip (already in visuals/).
 **Output**: PNG files, silent MP4 clips, 2 thumbnail candidates in `thumbnails/`.
 
-### 11. Generate Voiceover (Gemini TTS)
+### 11. Generate Voiceover — Voice Generation Gate
+
+Before calling Gemini TTS, ask two voice direction questions:
+
+```
+AskUserQuestion (2 questions):
+
+  Q1: "What delivery pace should the voice use?"
+  Header: "Voice Pace"
+  Options:
+    - "Calm and clear — 82% speed (default, works for most topics)"
+    - "Slow and deliberate — 72% speed (complex technical content, non-native speakers)"
+    - "Natural conversational — 90% speed (casual topics, shorter videos)"
+    - "Fast and energetic — 95% speed (trends, highlights, YouTube Shorts)"
+
+  Q2: "Voice gender preference?"
+  Header: "Voice"
+  Options:
+    - "Male narrator — Puck (default, deep and clear)"
+    - "Female narrator — Aoede (warm and authoritative)"
+    - "Neutral / expressive male — Charon"
+    - "Neutral / expressive female — Kore"
+```
+
+Map pace choice to atempo value: calm=0.82, slow=0.72, natural=0.90, fast=0.95.
+Map voice choice to Gemini voice name. Pass both to the TTS call below.
 
 **Local step — credentials stay here.**
 
@@ -215,7 +347,32 @@ forced-alignment (no API cost). Read `cue-sheet.md` yourself before step 13
 timestamps. A diagram should appear 0.5s before the narration that references
 it (pre-cue rule). Flag any asset with duration < 3s for replacement.
 
-### 13. Delegate Video Assembly
+### 13. Delegate Video Assembly — Editing Gate
+
+Before spawning the assembler, ask two final production questions:
+
+```
+AskUserQuestion (2 questions):
+
+  Q1: "How should callout text overlays appear?"
+  Header: "Callout Style"
+  Options:
+    - "Standard bottom-third — key terms highlighted, moderate density (default)"
+    - "Minimal — only the most important 2 or 3 callouts per video"
+    - "Heavy — callout for every named concept (suits dense technical tutorials)"
+    - "None — no callout overlays, visuals carry all context"
+
+  Q2: "How should the video end?"
+  Header: "End Card"
+  Options:
+    - "Full end card — social links from channel-config.md + subscribe CTA"
+    - "Subscribe + next video CTA only — minimal, drives retention"
+    - "Fade to black — no end card, clean finish"
+    - "Loop back — last frame loops into first 3 seconds (suits Shorts)"
+```
+
+Pass callout_style and end_card to the assembler explicitly in the subagent
+prompt so it renders the ending correctly.
 
 **Subagent**: youtube-video-assembler
 
@@ -265,7 +422,25 @@ callout, end-card). Read them. Confirm:
 If duration out of range: back to step 11, fix script, regen voiceover +
 cue sheet, re-invoke step 13.
 
-### 14. Write Metadata (Engagement-Optimized)
+### 14. Write Metadata — Thumbnail Gate
+
+Before writing metadata, ask one thumbnail direction question:
+
+```
+AskUserQuestion (1 question):
+
+  Q1: "What psychological hook should drive the thumbnail?"
+  Header: "Thumbnail"
+  Options:
+    - "Curiosity gap — imply there is an answer the viewer does not know yet"
+    - "Bold claim — state a contrarian or surprising position plainly"
+    - "Concrete specific — show a number, a named component, or a before/after"
+    - "Let the asset builder decide — generate 3 candidates and pick the strongest"
+```
+
+Record thumbnail_hook. Pass to the asset builder when it generates thumbnail
+candidates. If "Let the asset builder decide" is chosen, generate all 3 types
+and run the selection logic from the youtube-thumbnail skill step 4.
 
 **Local step — no subagent.**
 
