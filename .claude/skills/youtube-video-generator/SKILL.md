@@ -81,12 +81,17 @@ for near-duplicates first.
 Check `playlists/*.md` for close-match. If matched, use its
 Format/Audience-Level/Focus. Else pass through as-is.
 
-### 5. No input — predict next video
+### 5. No input — predict next video OR generate ideas
 
-Read all `playlists/*.md`. Find first `Planned` row per series (skip
-`Planned (superseded)`). If multiple series have `Planned` rows, ask user
-to pick one. Cross-check `series-log.md` for duplicates. Confirm in one
-line before proceeding.
+If user said "what's next": Read all `playlists/*.md`. Find first `Planned`
+row per series (skip `Planned (superseded)`). Cross-check `series-log.md`.
+Confirm in one line before proceeding.
+
+If user said "give me ideas" / "what should I make" / "I need topics":
+Run the Topic Ideation Mode (see professor-of-how-style.md for prompt template).
+Invoke youtube-researcher subagent with the ideation prompt to generate
+30 curiosity-hook titles. Present to user as a numbered list. Ask user to
+pick one or type their own before proceeding to step 6.
 
 ---
 
@@ -97,8 +102,8 @@ line before proceeding.
 - Read `series-log.md`: detect duplicate, assign next episode number NN.
 - Detect input mode (SHORT or DRAFT).
 
-If Audience + Duration not already supplied, ask both together with two
-additional intent questions — all four in one AskUserQuestion call:
+If Audience + Duration not already supplied, ask both together with three
+additional intent questions — all five in one AskUserQuestion call:
 
 ```
 AskUserQuestion (4 questions):
@@ -134,9 +139,23 @@ AskUserQuestion (4 questions):
     - "A gap I spotted in existing YouTube coverage"
     - "Audience question or request"
     - "It is the next episode in my planned series"
+
+  Q5: "What language should the script and voiceover use?"
+  Header: "Language"
+  Options:
+    - "English — standard narration (default)"
+    - "Hinglish — mix of Hindi and English, conversational (16-30 audience)"
+    - "Devnagri Hindi — full Hindi script, TTS-ready, English technical words kept in English"
+    - "Other — I will specify in the topic description"
 ```
 
-Record: episode number, input mode, duration, audience level, goal, origin.
+Record: episode number, input mode, duration, audience level, goal, origin, language.
+
+If language is Hinglish or Devnagri Hindi:
+- Read professor-of-how-style.md for script tone, TTS conversion rules.
+- Default script style becomes "Curiosity Short (Professor of How)" unless user
+  overrides in the scripting gate.
+- TTS voice: use multilingual Gemini voice if available; fall back to Puck.
 
 ### 7. Spawn Research Agent (youtube-researcher)
 
@@ -186,10 +205,10 @@ AskUserQuestion (2 questions):
   Q1: "What script style should this video use?"
   Header: "Script Style"
   Options:
+    - "Curiosity Short — Hook / Core / Twist / Ending, 120-150 words, 60s max (Professor of How style)"
     - "Fast punchy narrator — short sentences, one idea per cut (Fireship style)"
     - "Step-by-step tutorial — numbered beats, show then explain (Ali Abdaal style)"
     - "Deep explainer — analogies, diagrams, build understanding slowly (ByteByteGo style)"
-    - "Conversational take — I speak to camera, share opinions and examples"
 
   Q2: "What kind of hook should open the first 5 seconds?"
   Header: "Hook Type"
@@ -231,6 +250,35 @@ Fixed structure:
 - Beginner: every abstract claim needs a concrete visual anchor.
 - Count spoken words; stay within step-6 budget.
 
+### 9b. Per-Shot Storyboard Generation (Cinematic 3D Mode)
+
+Skip this step unless visual_style is "Cinematic 3D — Professor of How style".
+
+Read professor-of-how-style.md for the Visual Style Blueprint and per-shot
+format. For each line in script.md, generate one or more shots using the
+Scene ID / Line ID / Shot ID / IMAGE PROMPT / ANIMATION PROMPT structure.
+
+Rules:
+- One script line with multiple physical actions = multiple Shot IDs
+- IMAGE PROMPT must use the exact technical vocabulary from the blueprint
+  (volumetric lighting, PBR textures, chromatic aberration, etc.)
+- Forbidden words: cool, nice, detailed, amazing
+- Each IMAGE PROMPT is a single paragraph — no internal line breaks
+- ANIMATION PROMPT specifies camera movement + subject motion + pacing
+
+Save output as `storyboard.md` in the episode folder.
+
+This storyboard replaces vague [VISUAL:] tags for the asset builder.
+Pass the storyboard to youtube-asset-builder as its primary visual brief
+instead of script.md visual tags. The asset builder uses IMAGE PROMPTs
+to drive image generation (Higgsfield generate_image or PIL fallback).
+
+Also generate `image-prompts-whisk.txt` at this step:
+- Extract only IMAGE PROMPTs, one per paragraph, no labels, no numbering
+- Separated by exactly one blank line
+- Ready to paste into Midjourney, Whisk, Ideogram, or Adobe Firefly
+- Save in episode folder alongside storyboard.md
+
 ### 10. Delegate Asset Generation — Image Generation Gate
 
 Before spawning asset agents, ask two visual direction questions:
@@ -242,7 +290,7 @@ AskUserQuestion (2 questions):
   Header: "Visual Style"
   Options:
     - "Dark code aesthetic — dark background, green/white diagrams, monospace labels (default)"
-    - "Clean flat illustrations — light background, minimal color palette, bold shapes"
+    - "Cinematic 3D — Professor of How style: 8K PBR render, teal/orange grade, macro fly-through"
     - "Real architecture diagrams — named AWS/Kubernetes/cloud components, accurate topology"
     - "Screenshot-heavy — real product UIs and terminal output as primary visuals"
 
@@ -308,6 +356,12 @@ Map voice choice to Gemini voice name. Pass both to the TTS call below.
    - Strip headers + all `[VISUAL:]` / `[ANIMATION:]` / `[CALLOUT:]` lines.
    - Join sections with one blank line between. Save as `narration.txt`.
    - Must have exactly 4 blank-line chunks.
+
+   If language is Devnagri Hindi (set in step 6):
+   - Apply TTS conversion rules from professor-of-how-style.md:
+     convert Hindi words to Devnagri, keep English technical terms in English.
+   - Save as `narration-hindi.txt`. Use this file for TTS below instead.
+   - If language is Hinglish: use narration.txt as-is (mixed script is fine).
 
 2. Read `GEMINI_API_KEY` from `.env`. Call Gemini TTS:
    - Model: `gemini-2.5-flash-preview-tts`
@@ -496,7 +550,10 @@ Final structure:
 episodes/episode-NN-<slug>/
   script.md
   narration.txt
-  web-assets.md          ← new: web image references
+  narration-hindi.txt         ← only if language is Devnagri Hindi
+  web-assets.md               ← web image references
+  storyboard.md               ← only if visual style is Cinematic 3D
+  image-prompts-whisk.txt     ← only if visual style is Cinematic 3D
   visuals/
     visual-01.png … visual-0N.png
     web-01.png … web-0N.png   ← fetched web images
