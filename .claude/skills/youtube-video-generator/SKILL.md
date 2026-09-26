@@ -140,22 +140,10 @@ AskUserQuestion (4 questions):
     - "Audience question or request"
     - "It is the next episode in my planned series"
 
-  Q5: "What language should the script and voiceover use?"
-  Header: "Language"
-  Options:
-    - "English — standard narration (default)"
-    - "Hinglish — mix of Hindi and English, conversational (16-30 audience)"
-    - "Devnagri Hindi — full Hindi script, TTS-ready, English technical words kept in English"
-    - "Other — I will specify in the topic description"
 ```
 
-Record: episode number, input mode, duration, audience level, goal, origin, language.
-
-If language is Hinglish or Devnagri Hindi:
-- Read professor-of-how-style.md for script tone, TTS conversion rules.
-- Default script style becomes "Curiosity Short (Professor of How)" unless user
-  overrides in the scripting gate.
-- TTS voice: use multilingual Gemini voice if available; fall back to Puck.
+Record: episode number, input mode, duration, audience level, goal, origin.
+Language is always English. Script and voiceover are English-only.
 
 ### 7. Spawn Research Agent (youtube-researcher)
 
@@ -205,10 +193,10 @@ AskUserQuestion (2 questions):
   Q1: "What script style should this video use?"
   Header: "Script Style"
   Options:
-    - "Curiosity Short — Hook / Core / Twist / Ending, 120-150 words, 60s max (Professor of How style)"
+    - "Deep explainer — curiosity-gap hook, twist reveal, ByteByteGo pace (default for this series)"
     - "Fast punchy narrator — short sentences, one idea per cut (Fireship style)"
     - "Step-by-step tutorial — numbered beats, show then explain (Ali Abdaal style)"
-    - "Deep explainer — analogies, diagrams, build understanding slowly (ByteByteGo style)"
+    - "Conversational take — speak directly, share opinions and examples"
 
   Q2: "What kind of hook should open the first 5 seconds?"
   Header: "Hook Type"
@@ -226,19 +214,43 @@ and the opening lines of script.md.
 audience level + duration + web asset references + script_style + hook_type.
 
 Fixed structure:
-1. **Hook** (3s, states the question — designed as pattern interrupt)
-2. **Core concept** (plain English, with concrete examples)
-3. **My angle** (differentiated gap or explicit "no gap found")
+1. **Hook** (first 5s) — opens a curiosity gap. States a question, surprising
+   fact, or bold claim the viewer feels compelled to resolve. The hook title
+   must also double as the clickable video title — reframe the topic as a
+   mystery or a revelation, not a description.
+   Bad: "MCP Server Architecture Explained"
+   Good: "Why Your AI Keeps Forgetting Everything (MCP Fixes This)"
+2. **Core concept** (plain English, concrete examples, visual-dense)
+3. **Twist** — the mind-blowing reframe or reveal promised by the hook.
+   Lands in the final third before the CTA. One specific insight that changes
+   how the viewer thinks about the topic. Not a summary — a perspective shift.
+   Example: "So MCP isn't about making AI smarter. It's about giving it
+   a nervous system. That's the difference between a brain in a jar and
+   one that can actually act in the world."
 4. **CTA** (dark-themed end-card, all 5 platforms, exact tag format per
-   youtube-episode step 4)
+   youtube-episode step 4) — no generic "like and subscribe" lines.
+   The closing line before the CTA must be memorable and standalone,
+   not a setup for the subscribe button.
 
 **Engagement-first writing rules**:
-- Hook must create a "knowledge gap" the viewer needs to fill (curiosity loop).
+- Hook must open a named curiosity gap — state what the viewer does NOT yet
+  know and why that gap matters to them specifically. Not a teaser, a promise.
+- Curiosity-gap title rule: every episode title must follow one of these
+  three patterns:
+    - Hidden truth: "The [X] Nobody Talks About"
+    - Reframe: "You've Been [Doing X] Wrong. Here's Why."
+    - Stakes: "Why [X] Changes Everything About [Y]"
 - Every 15–20s of narration must have a visual change (pattern interrupt).
-- First 5s must state a specific outcome/promise ("By the end of this you'll…").
+- First 5s must name the specific outcome or revelation ("By the end of
+  this you will understand exactly why...").
 - Use power words in callouts: "The real reason", "Most people miss this",
-  "Here's what changes everything".
-- End every major section with a micro-CTA or tension hook into next section.
+  "Here is what changes everything", "This is the part no one explains".
+- End every major section with a micro-tension hook pulling into the next
+  section ("But here is where it gets interesting...").
+- Twist must be earned — it must connect directly back to the hook's
+  curiosity gap and close it with a specific insight, not a platitude.
+- No generic closing lines. Last spoken sentence must work as a standalone
+  thought the viewer will remember after the video ends.
 
 **Requirements**:
 - Number every `[VISUAL:]` / `[ANIMATION:]` tag in script order
@@ -338,17 +350,22 @@ AskUserQuestion (2 questions):
     - "Natural conversational — 90% speed (casual topics, shorter videos)"
     - "Fast and energetic — 95% speed (trends, highlights, YouTube Shorts)"
 
-  Q2: "Voice gender preference?"
-  Header: "Voice"
+  Q2: "Which male accent should the narrator use?"
+  Header: "Accent"
   Options:
-    - "Male narrator — Puck (default, deep and clear)"
-    - "Female narrator — Aoede (warm and authoritative)"
-    - "Neutral / expressive male — Charon"
-    - "Neutral / expressive female — Kore"
+    - "Male UK accent — Charon (British English, clear and authoritative)"
+    - "Male India accent — Fenrir (Indian English, warm and articulate)"
+    - "Male US accent — Puck (American English, deep and clear — default)"
+    - "Male US accent — Orus (American English, neutral presenter tone)"
 ```
 
+Voice is always male English. No female voices. No non-English languages.
 Map pace choice to atempo value: calm=0.82, slow=0.72, natural=0.90, fast=0.95.
-Map voice choice to Gemini voice name. Pass both to the TTS call below.
+Map accent choice to Gemini voice name. Pass both to the TTS call below.
+
+Note: Gemini TTS accent rendering is approximate — voice names determine
+tonal character more than strict phonetic accent. Test your preferred voice
+on a 30-second sample before committing to a full episode.
 
 **Local step — credentials stay here.**
 
@@ -356,12 +373,6 @@ Map voice choice to Gemini voice name. Pass both to the TTS call below.
    - Strip headers + all `[VISUAL:]` / `[ANIMATION:]` / `[CALLOUT:]` lines.
    - Join sections with one blank line between. Save as `narration.txt`.
    - Must have exactly 4 blank-line chunks.
-
-   If language is Devnagri Hindi (set in step 6):
-   - Apply TTS conversion rules from professor-of-how-style.md:
-     convert Hindi words to Devnagri, keep English technical terms in English.
-   - Save as `narration-hindi.txt`. Use this file for TTS below instead.
-   - If language is Hinglish: use narration.txt as-is (mixed script is fine).
 
 2. Read `GEMINI_API_KEY` from `.env`. Call Gemini TTS:
    - Model: `gemini-2.5-flash-preview-tts`
@@ -550,7 +561,6 @@ Final structure:
 episodes/episode-NN-<slug>/
   script.md
   narration.txt
-  narration-hindi.txt         ← only if language is Devnagri Hindi
   web-assets.md               ← web image references
   storyboard.md               ← only if visual style is Cinematic 3D
   image-prompts-whisk.txt     ← only if visual style is Cinematic 3D
