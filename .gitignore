@@ -1,7 +1,4 @@
-# graft's local graph cache — regenerable, not committed (run `graft build`).
-# Anchored pattern alone missed a stray nested copy once (a hook recreated
-# graft/.cache under a stale episode-folder path after a rename) — the
-# unanchored rule below catches any graft cache dir regardless of nesting.
+# graft local graph cache
 /graft/
 **/graft/.cache/
 **/graft/.graph/
@@ -12,17 +9,21 @@
 # Python cache
 __pycache__/
 *.pyc
+*.pyc.py
 
-# Episode media — kept intact locally, never committed. Video/audio files
-# accumulate as the MCP Zero-to-Hero playlist grows, and GitHub has a
-# 100MB hard file limit / discourages large binaries without Git LFS.
-# Script, metadata, cue sheets, and thumbnails (small, useful to browse
-# in the repo) still get tracked — only the heavy media is excluded.
-episodes/**/*.mp4
-episodes/**/*.wav
+# Episode production output — kept locally for editing, never in the repo.
+# All generated media and production artifacts belong outside version control.
+episodes/
 
-# Local settings (machine-specific), not shared config
+# Unrelated plugins — managed separately, not part of this repo
+:LinkedIn-blog-architect/
+.agents/
+.claude/skills/higgsfield-*/
+
+# Local machine settings
 .claude/settings.local.json
 
 # Secrets — never commit
 .env
+*.env
+.env.*
