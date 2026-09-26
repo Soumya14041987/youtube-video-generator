@@ -1,0 +1,41 @@
+
+# Channel Configuration
+
+Copy this file to channel-config.md and fill in your own values.
+The youtube-video-generator plugin reads this file to personalize
+every episode's end-card, metadata footer, and publish schedule.
+
+Never commit channel-config.md to git if it contains personal information.
+The .gitignore already excludes it.
+
+---
+
+## Channel Identity
+
+Channel Name: Your Channel Name
+Channel Tagline: Your short tagline or series name
+
+## Social Links
+
+LinkedIn: https://www.linkedin.com/in/your-handle
+Medium: https://medium.com/@your-handle
+X: https://x.com/your-handle
+GitHub: https://github.com/your-username/your-repo
+Website: https://your-site.com
+
+## Publish Schedule
+
+Short beginner content: Tuesday / Thursday / Saturday / Sunday, 8 to 9 PM your local time
+Long advanced content: Saturday, 9 to 10 AM your local time
+
+## End Card
+
+Channel wordmark text: YOUR CHANNEL NAME
+Series tag: YOUR SERIES NAME
+CTA line: FOLLOW FOR THE NEXT EPISODE
+
+## Channel Icon Overlay
+
+Text line 1: Your Channel Name
+Text line 2: Your Series Name
+Badge color: dark pill, green border (default) or change to match your brand

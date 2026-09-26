@@ -1,5 +1,5 @@
 ---
-description: Produce a full "Claude Explains" YouTube episode package (script, visuals, thumbnails, metadata) from a topic
+description: Produce a full YouTube episode package (script, visuals, thumbnails, metadata) from a topic
 argument-hint: [topic one-liner or paragraph]
 ---
 

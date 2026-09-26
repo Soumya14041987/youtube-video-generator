@@ -256,7 +256,7 @@ Project Root
 ├─ series-log.md                   (episode log, updated by step 14)
 │
 ├─ playlists/
-│  └─ mcp-zero-to-hero.md         (planned episodes, referenced by steps 3-4)
+│  └─ your-series-name.md         (planned episodes, referenced by steps 3-4)
 │
 └─ episodes/
    ├─ episode-01-what-is-mcp/

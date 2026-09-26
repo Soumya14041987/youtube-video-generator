@@ -1,6 +1,6 @@
 ---
 name: youtube-researcher
-description: Researches a topic for the "Claude Explains" YouTube channel and returns a structured brief (facts, existing coverage, differentiation gap, sources) — never a script. Invoked by the youtube-episode skill.
+description: Researches a topic for a YouTube channel and returns a structured brief (facts, existing coverage, differentiation gap, sources) — never a script. Invoked by the youtube-episode skill.
 tools: WebSearch, WebFetch
 model: claude-sonnet-5
 ---

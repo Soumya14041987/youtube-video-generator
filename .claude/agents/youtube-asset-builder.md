@@ -1,6 +1,6 @@
 ---
 name: youtube-asset-builder
-description: Generates real PNG visual assets, animated diagram clips, and thumbnail candidates for a "Claude Explains" YouTube episode from a script's [VISUAL:...] and [ANIMATION:...] tags — abstract concepts, comparisons, and orbit/reveal animations. Real-world architecture/infrastructure diagrams are handled upstream by youtube-archify-diagrammer. Invoked by the youtube-episode skill after the script is written.
+description: Generates real PNG visual assets, animated diagram clips, and thumbnail candidates for a YouTube episode from a script's [VISUAL:...] and [ANIMATION:...] tags — abstract concepts, comparisons, and orbit/reveal animations. Real-world architecture/infrastructure diagrams are handled upstream by youtube-archify-diagrammer. Invoked by the youtube-episode skill after the script is written.
 tools: Bash, Read, Write, Glob, mcp__claude_ai_Excalidraw__create_view, mcp__claude_ai_Excalidraw__export_to_excalidraw
 model: claude-sonnet-5
 ---

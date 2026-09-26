@@ -1,13 +1,17 @@
 ---
 name: youtube-episode
-description: Turn a topic (one-liner or paragraph) into a complete, ready-to-upload YouTube episode package for the "Claude Explains" channel — researched script, a real-audio-aligned cue sheet, generated visuals, thumbnails, a rendered faceless .mp4 with AI voiceover (no burned-in captions — YouTube's own automatic-captions handles that post-upload), and upload metadata with hashtags. Trigger on "/youtube-episode", or when the user gives a topic and asks for an episode, video script, or YouTube content.
+description: Turn a topic (one-liner or paragraph) into a complete, ready-to-upload YouTube episode package — researched script, a real-audio-aligned cue sheet, generated visuals, thumbnails, a rendered faceless .mp4 with AI voiceover (no burned-in captions — YouTube's own automatic-captions handles that post-upload), and upload metadata with hashtags. Reads channel identity from channel-config.md at the project root. Trigger on "/youtube-episode", or when the user gives a topic and asks for an episode, video script, or YouTube content.
 ---
 
-# YouTube Episode Pipeline — "Claude Explains"
+# YouTube Episode Pipeline
 
 Produces everything up to the upload click: script, real image assets,
 thumbnails, a rendered narrated `.mp4`, and metadata. Faceless format (AI
 voiceover over visuals, no avatar) — you still upload manually.
+
+Channel identity (name, social links, series tag, publish schedule) is read
+from `channel-config.md` at the project root. Copy `channel-config.md.example`
+to `channel-config.md` and fill it in before running for the first time.
 
 Model staging across stages (see `token-optimizer` skill for the token
 side of this): **simple/structured tasks run on Sonnet 5** — research,
@@ -21,13 +25,13 @@ while on Sonnet 5 or Opus 5**.
 
 ## 0. Read continuity file first
 
-Read `/series-log.md` before anything else.
+Read `series-log.md` at the project root before anything else.
 - Check the topic against existing rows to avoid duplicating a covered topic.
   If it looks like a near-duplicate, tell the user which prior episode
   overlaps and ask whether to proceed, angle it differently, or skip.
 - Determine the next episode number = highest existing episode + 1
   (zero-padded to 2 digits, e.g. `03`). If the file has no rows, start at `01`.
-- If `/series-log.md` is missing or its table is unparseable, stop and tell
+- If `series-log.md` is missing or its table is unparseable, stop and tell
   the user — do not silently recreate it (it's the only cross-session
   continuity mechanism; guessing the next episode number wrong causes
   collisions).
@@ -101,34 +105,26 @@ Write `script.md` using this fixed structure, and no other structure:
    missing from existing coverage. If the brief found no real gap, say so
    explicitly rather than inventing one.
 4. **CTA** — follow/next-episode tie-in. The CTA's `[VISUAL:]` end-card
-   must show all 5 platforms on screen (LinkedIn, Medium, AWS Builder
-   Center, X, GitHub) as a **dark-themed card grid** — not the old plain
-   white-background text list, which looked disconnected from every other
-   dark-bg frame in the video and undersold the channel. **The tag text
-   must spell out the correct handle for each platform individually,
-   verbatim, exactly as below, and must spell out the channel wordmark
-   text explicitly too — never just say "channel wordmark" and leave the
-   actual text to be inferred.** Three real production bugs came from
-   under-specifying this tag: (1) writing only `LinkedIn · Medium · AWS
-   Builder Center · X — @AIWithSoumya` let the asset builder reuse the one
-   visible handle for all platforms, mislabeling LinkedIn and Medium; (2)
-   writing "channel wordmark" without its literal text produced an
-   end-card headlined with the *episode's own series title* instead of the
-   channel name, and a bare AWS Builder Center row with no value; (3) a
-   plain white-bg text-list design read as generic and inconsistent with
-   the rest of the video. The asset builder has no other source for any of
-   this at generation time — `metadata.md`'s Connect footer, which has the
-   correct values, is written later in step 9. Copy this exact tag text
-   every time, don't paraphrase or drop any value down to just a platform
-   name:
+   must show all configured social platforms as a **dark-themed card grid**
+   — not a plain white-background text list. Before writing this tag, read
+   `channel-config.md` at the project root to get the channel name, series
+   tag, and social handles. **Spell out every value verbatim in the tag —
+   never just say "channel wordmark" or "social links" and leave the actual
+   text to be inferred.** The asset builder has no other source for these
+   values at generation time. The tag format:
    ```
-   [VISUAL: end-card — dark #0d1117 background (matching every other frame in the video, not white), the literal text "AI WITH SOUMYA" as a large centered channel wordmark (this is the channel name, not the episode or series title — never substitute the episode/playlist title here) with a thin accent-color underline beneath it, a small series tag below that reading "MCP : ZERO TO HERO", then a horizontal row of 5 rounded platform cards, each with a colored top accent bar in that platform's brand color, a circular monogram/initial in the same color, the platform name, and its handle: LinkedIn (blue, aiops-genai-developer) · Medium (white, @soumya14041987) · AWS Builder Center (orange, builder.aws.com) · X (white, @AIWithSoumya) · GitHub (light blue, mcp-zero-to-hero) — every card gets a label AND a value, none bare — and a bold accent-outlined CTA box beneath the cards reading "FOLLOW FOR THE NEXT EPISODE". Same design every episode uses.]
+   [VISUAL: end-card — dark #0d1117 background, the channel name from
+   channel-config.md as a large centered wordmark with a thin accent-color
+   underline, the series tag from channel-config.md below it, then a
+   horizontal row of rounded platform cards (one per social link in
+   channel-config.md), each with a colored top accent bar, the platform
+   name, and its handle — every card gets a label AND a value, none bare —
+   and a bold CTA box reading "FOLLOW FOR THE NEXT EPISODE".]
    ```
-   or stacked as 4 short lines if that reads better at the format's aspect
-   ratio (still one label-and-value pair per line, never just a platform
-   name with nothing after it). These 4 values
-   are fixed for this channel — never invent or infer a handle for any of
-   them.
+   Substitute real values from `channel-config.md` into the tag before
+   passing it to the asset builder — never pass placeholder text through.
+   If `channel-config.md` is missing, stop and ask the user to create it
+   from `channel-config.md.example` before continuing.
 
 Inline three kinds of tags — the handoff contract to the asset builder and
 video assembler, so be concrete (not just "diagram here"):
@@ -347,29 +343,23 @@ Write `metadata.md` with:
 - tags (comma-separated, for the YouTube tags field)
 - a `## Hashtags` section (3-5 `#hashtags` for the description/pinned comment)
 - a description draft
-- a `## Connect` footer block appended to the end of the description, always
-  exactly this (same every episode, verbatim):
-  ```
-  Connect with me:
-  LinkedIn: https://www.linkedin.com/in/aiops-genai-developer
-  Medium: https://medium.com/@soumya14041987
-  AWS Builder Center: https://builder.aws.com/
-  X: https://x.com/AIWithSoumya
-  GitHub (series code + episode assets): https://github.com/Soumya14041987/mcp-zero-to-hero
-  ```
+- a `## Connect` footer block appended to the end of the description.
+  Read the social links from `channel-config.md` at the project root and
+  format them as a "Connect with me:" block, one link per line, same every
+  episode. If `channel-config.md` is missing, leave a placeholder comment
+  asking the user to fill it in.
 - a recommended day/time slot
 
-Apply exactly one of these rules, and always state in `metadata.md` which
-one applied and why:
+Read publish schedule rules from `channel-config.md` when present. Default
+rules when not configured:
 
 | Content type | Slot | Rule name |
 |---|---|---|
-| Short-form, beginner concept | Tue / Thu / Sat / Sun, 8-9 PM IST | `short-beginner` |
-| Long-form, advanced or personal-workflow content | Saturday, 9-10 AM IST | `long-advanced` |
+| Short-form, beginner concept | Tue / Thu / Sat / Sun, 8-9 PM local time | short-beginner |
+| Long-form, advanced or personal-workflow content | Saturday, 9-10 AM local time | long-advanced |
 
-Never output a slot recommendation without naming which rule fired. If the
-episode doesn't cleanly fit either (e.g. long-form beginner content), say so
-and pick the closer rule explicitly rather than silently defaulting.
+Always state which rule fired and why. If the episode does not cleanly fit
+either rule, say so and pick the closer one explicitly.
 
 ## 10. Assemble the output folder
 

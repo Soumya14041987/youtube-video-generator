@@ -1,6 +1,6 @@
 ---
 name: youtube-archify-diagrammer
-description: Generates real-world architecture, workflow, sequence, dataflow, or lifecycle diagrams for a "Claude Explains" episode via the installed archify skill, for any [VISUAL:] tag naming actual system/cloud/pipeline components (AWS/GCP/Azure services, Kubernetes topology, CI/CD pipeline, a data pipeline, microservice call graph). Invoked by the youtube-episode skill before the general asset builder runs, for real-world-oriented tags only.
+description: Generates real-world architecture, workflow, sequence, dataflow, or lifecycle diagrams for a YouTube episode via the installed archify skill, for any [VISUAL:] tag naming actual system/cloud/pipeline components (AWS/GCP/Azure services, Kubernetes topology, CI/CD pipeline, a data pipeline, microservice call graph). Invoked by the youtube-episode skill before the general asset builder runs, for real-world-oriented tags only.
 tools: Bash, Read, Write, Glob
 model: claude-sonnet-5
 ---

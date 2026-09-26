@@ -1,6 +1,6 @@
 ---
 name: youtube-thumbnail
-description: Given a finished "Claude Explains" episode (episode.mp4 already rendered by the youtube-episode skill), analyze the actual video and generate one final, unified, high-CTR thumbnail plus consolidated upload-ready metadata. Trigger on "/youtube-thumbnail", or when the user asks to optimize, finalize, or strengthen a thumbnail for an existing episode.
+description: Given a finished YouTube episode (episode.mp4 already rendered by the youtube-episode skill), analyze the actual video and generate one final, unified, high-CTR thumbnail plus consolidated upload-ready metadata. Trigger on "/youtube-thumbnail", or when the user asks to optimize, finalize, or strengthen a thumbnail for an existing episode.
 ---
 
 # YouTube Thumbnail Optimizer

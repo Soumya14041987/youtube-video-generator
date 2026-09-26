@@ -1,6 +1,6 @@
 # YouTube Video Generator — Master Orchestrator
 
-**Master orchestrator for end-to-end "Claude Explains" video production.**
+**Master orchestrator for end-to-end YouTube video production.**
 
 Entry point: `/youtube-video-generator`
 
@@ -201,20 +201,18 @@ Format:
 | 02 | build-first-mcp-server | How to Build Your First MCP Server | long | long-5min | long-advanced | yes | 2026-09-20 | Building an MCP server from scratch |
 ```
 
-### playlists/mcp-zero-to-hero.md
+### playlists/your-series-name.md
 
-Playlist of planned episodes. Orchestrator:
+Optional playlist file for a planned episode series. Orchestrator:
 1. Reads it during input resolution (step 3) to match bare topics
 2. Reads it during "what's next" prediction (step 4)
 
-Format:
+Create one per series with a descriptive filename. Format:
 ```
 | # | Title | Format | Level | Focus | Status |
 |----|-------|--------|-------|-------|--------|
-| 1 | What is MCP? | short | beginner | conceptual | Produced |
-| 2 | Build Your First MCP Server | long | intermediate | practical | Produced |
-| 3 | Testing & Debugging MCPs | long | intermediate | practical | Planned |
-| 4 | Deploying MCPs to Production | long | advanced | operational | Planned |
+| 1 | First Episode Title | short | beginner | conceptual | Produced |
+| 2 | Second Episode Title | long | intermediate | practical | Planned |
 ```
 
 ---

@@ -1,11 +1,11 @@
 ---
 name: youtube-video-generator
-description: Master orchestrator for "Claude Explains" video production. Accepts structured input (topic, URL, title, audience level, duration) or bare topic or URL or nothing at all ("what's next"), resolves to a concrete episode spec, then orchestrates the full pipeline — research + web asset fetch, script, diagram generation, voiceover, timeline sync, assembly. Produces engagement-optimized output. Trigger on "/youtube-video-generator", or a request to make a video from a link, or "what's the next video".
+description: Master orchestrator for YouTube video production. Accepts structured input (topic, URL, title, audience level, duration) or bare topic or URL or nothing at all ("what's next"), resolves to a concrete episode spec, then orchestrates the full pipeline — research + web asset fetch, script, diagram generation, voiceover, timeline sync, assembly. Produces engagement-optimized output. Trigger on "/youtube-video-generator", or a request to make a video from a link, or "what's the next video".
 ---
 
 # YouTube Video Generator — Master Orchestrator
 
-**Master orchestrator for end-to-end video production.** Receives structured
+**Master orchestrator for end-to-end YouTube video production.** Receives structured
 or bare user input, resolves to a concrete episode spec, then invokes subagents
 in sequence to produce research + real web assets, script, visuals, voiceover,
 timeline, final video, and metadata.
@@ -243,8 +243,10 @@ Assembler reads `cue-sheet.json` directly — never recomputes timing.
 - Position: top-right, 24px margin from both edges
 - Opacity: 85%
 - Present for entire video duration
-- If `channel-icon-overlay.png` missing: generate it via PIL (green-dot +
-  "Claude Explains" / "MCP Zero to Hero" on dark rounded pill, RGBA)
+- If `channel-icon-overlay.png` missing: generate it via PIL using the
+  channel name and tagline from `channel-config.md` (dark rounded pill,
+  green border, RGBA). If `channel-config.md` is absent, use placeholder
+  text and log a warning for the user to configure their channel details.
 
 #### Visual sync quality (reference-video style)
 - Every visual must appear within 0.5s of the first spoken word that
@@ -276,30 +278,26 @@ Write `metadata.md`:
 If user supplied a Title field in structured input, use it as Option A and
 write B + C as alternates.
 
-**Tags**: comma-separated YouTube tags — lead with exact certification exam
-domain keywords if MCPA/exam-prep content.
+**Tags**: comma-separated YouTube tags — lead with keywords matching the
+topic's niche or certification domain if this is exam-prep content.
 
-**Hashtags**: 3–5 `#hashtags` — mix of broad (#AI, #MachineLearning) and
-specific (#MCP, #ClaudeAI).
+**Hashtags**: 3–5 hashtags — mix of broad and topic-specific.
 
 **Description draft**:
 - First 2 lines visible before "more" fold — must contain the promise.
 - Timestamps if long format.
 - Full series context.
 
-**`## Connect` footer** (fixed):
-```
-Connect with me:
-LinkedIn: https://www.linkedin.com/in/aiops-genai-developer
-Medium: https://medium.com/@soumya14041987
-AWS Builder Center: https://builder.aws.com/
-X: https://x.com/AIWithSoumya
-GitHub: https://github.com/Soumyadip1987/mcp-zero-to-hero
-```
+**Connect footer**: Read social links from `channel-config.md` at the
+project root. If the file exists, append those links verbatim as a
+"Connect with me:" block. If the file is missing, leave a placeholder
+comment (`# TODO: add your social links from channel-config.md`) and
+tell the user to copy `channel-config.md.example` and fill it in.
 
-**Publish slot**:
-- `short-beginner`: Tue/Thu/Sat/Sun, 8–9 PM IST
-- `long-advanced`: Saturday, 9–10 AM IST
+**Publish slot**: Read the schedule from `channel-config.md` if present.
+Default rules when not configured:
+- Short beginner content: Tue/Thu/Sat/Sun, 8 to 9 PM local time
+- Long advanced content: Saturday, 9 to 10 AM local time
 - State which rule applied.
 
 **Engagement checklist** (append to metadata.md):

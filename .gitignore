@@ -11,9 +11,20 @@ __pycache__/
 *.pyc
 *.pyc.py
 
-# Episode production output — kept locally for editing, never in the repo.
-# All generated media and production artifacts belong outside version control.
+# Episode production output and series-specific files — kept locally, never in repo.
+# All generated media, production artifacts, and creator-specific tracking files
+# belong outside version control.
 episodes/
+series-log.md
+playlists/
+youtube-upload-checklist.md
+
+# Channel identity — creator fills this in locally; never commit it.
+# Copy channel-config.md.example to channel-config.md and fill in your own details.
+channel-config.md
+
+# Hook cache
+.claude/hooks/__pycache__/
 
 # Unrelated plugins — managed separately, not part of this repo
 :LinkedIn-blog-architect/
