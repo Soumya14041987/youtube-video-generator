@@ -329,11 +329,13 @@ architecture tags (AWS, Kubernetes, CI/CD, microservice graphs).
 **Output**: PNG for that visual.
 
 **Subagent 2 (youtube-asset-builder)**: After archify, spawn for remaining
-visuals + animations + thumbnails.
+visuals + animations only. Do NOT ask it to generate thumbnails here —
+thumbnail generation is handled exclusively in Step 13b after the video
+is assembled and frames can be read.
 
 **Input**: full `script.md`, episode folder, format, archify-generated visual
 numbers to skip, web asset filenames to skip (already in visuals/).
-**Output**: PNG files, silent MP4 clips, 2 thumbnail candidates in `thumbnails/`.
+**Output**: PNG files, silent MP4 clips. No thumbnails at this stage.
 
 ### 11. Generate Voiceover — Voice Generation Gate
 
@@ -434,10 +436,18 @@ AskUserQuestion (2 questions):
     - "Subscribe + next video CTA only — minimal, drives retention"
     - "Fade to black — no end card, clean finish"
     - "Loop back — last frame loops into first 3 seconds (suits Shorts)"
+
+  Q3: "What psychological hook should lead the thumbnail? (used in Step 13b)"
+  Header: "Thumbnail"
+  Options:
+    - "Curiosity gap — imply the answer without revealing it (default)"
+    - "Bold claim — state the contrarian angle plainly"
+    - "Concrete specific — show a named component, number, or before/after"
+    - "Generate all 3 and score them — pick the strongest automatically"
 ```
 
-Pass callout_style and end_card to the assembler explicitly in the subagent
-prompt so it renders the ending correctly.
+Pass callout_style, end_card, and thumbnail_hook to the assembler and forward
+thumbnail_hook to Step 13b.
 
 **Subagent**: youtube-video-assembler
 
@@ -487,25 +497,89 @@ callout, end-card). Read them. Confirm:
 If duration out of range: back to step 11, fix script, regen voiceover +
 cue sheet, re-invoke step 13.
 
-### 14. Write Metadata — Thumbnail Gate
+### 13b. Thumbnail Optimization (Inline — runs every episode)
 
-Before writing metadata, ask one thumbnail direction question:
+Runs immediately after episode.mp4 is confirmed valid. This step is mandatory
+— not optional — because thumbnail quality directly determines CTR and
+therefore whether the algorithm promotes the video at all.
 
+**Step 1 — Analyze the rendered video**
+
+Extract 5 evenly-spaced frames via ffmpeg and read them visually:
+```bash
+ffmpeg -i episode.mp4 -vf "select=eq(n\,0)+eq(n\,floor(N/4))+eq(n\,floor(N/2))+eq(n\,floor(3*N/4))+eq(n\,N-1)" -vsync 0 thumbnails/frame-%02d.png
 ```
-AskUserQuestion (1 question):
+Read all 5 frames. Note: strongest visual moment, most readable diagram,
+best callout text visible, most distinctive on-screen element. These
+observations feed the concept drafting below — do not skip and draft from
+script.md alone.
 
-  Q1: "What psychological hook should drive the thumbnail?"
-  Header: "Thumbnail"
-  Options:
-    - "Curiosity gap — imply there is an answer the viewer does not know yet"
-    - "Bold claim — state a contrarian or surprising position plainly"
-    - "Concrete specific — show a number, a named component, or a before/after"
-    - "Let the asset builder decide — generate 3 candidates and pick the strongest"
-```
+**Step 2 — Draft 3 CTR concepts**
 
-Record thumbnail_hook. Pass to the asset builder when it generates thumbnail
-candidates. If "Let the asset builder decide" is chosen, generate all 3 types
-and run the selection logic from the youtube-thumbnail skill step 4.
+Generate exactly 3 thumbnail concepts, each anchored on a different
+psychological hook:
+
+A. Curiosity gap — implies an answer without giving it away.
+   Title format: "The [X] Nobody Talks About" / "Why [X] Actually Means [Y]"
+   Visual focal point: a diagram element that looks significant but unexplained.
+
+B. Bold claim — states the differentiated angle of the episode plainly.
+   Title format: "You've Been [Doing X] Wrong" / "[X] Changes Everything"
+   Visual focal point: the twist reveal moment from the script's third section.
+
+C. Concrete specific — a named component, number, or before/after from
+   the actual video. Credible, not clickbaity. Works best for technical content.
+   Title format: "[Real Named Thing] Explained in [Time]" or "[Number] Things..."
+   Visual focal point: the clearest architecture diagram frame extracted above.
+
+If thumbnail_hook was set in the Gate 6 elicitation, lead with that type as
+concept A but still generate all 3.
+
+**Step 3 — Generate 3 thumbnail PNGs**
+
+Invoke youtube-asset-builder subagent with the 3 concrete concept briefs.
+Produce: `thumbnails/thumb-a.png`, `thumbnails/thumb-b.png`, `thumbnails/thumb-c.png`
+
+Mandatory thumbnail spec (pass explicitly to asset builder):
+- Dimensions: 1280x720 (all formats — YouTube standard)
+- Background: dark (#0d1117 or similar), never white or light
+- Text: bold sans-serif, maximum 6 words, high contrast (white or bright accent)
+- Single focal point: one diagram, one callout, or one strong graphic — never
+  three competing elements
+- No face/avatar (unless user explicitly requested avatar overlay)
+- Legibility test: thumbnail must read clearly at 168x94px (YouTube grid size)
+  — large text only, no fine detail that disappears at small size
+- Accent color: match channel brand from channel-config.md if present
+
+**Step 4 — Score and pick the winner**
+
+Judge each of the 3 by these criteria (score 1-3 per criterion):
+- Legible at small size (168x94px): can you read the text and identify focal point?
+- Unique on this topic: does it look different from the top 5 videos on this topic?
+- Promises a specific payoff: does it make the viewer feel they will gain something?
+- Matches the title: thumbnail concept and chosen title work as a pair?
+
+Highest total score wins. State the one-line reason. Copy winner to
+`thumbnail-final.png` at episode root. Keep all 3 in `thumbnails/`.
+
+**Step 5 — Align metadata.md titles to winning thumbnail**
+
+Rewrite all 3 title options in metadata.md to match the winning thumbnail's
+angle. If thumbnail B (bold claim) won, all 3 title variants should carry
+that energy — benefit-driven, curiosity-driven, and outcome-specific.
+Descriptive titles ("MCP Server Architecture Explained") are not permitted
+as any of the 3 options at this point.
+
+CTR title rules:
+- Must contain a knowledge gap OR a specific outcome OR a reframe
+- Under 60 characters for search truncation
+- Lead keyword within the first 3 words when possible
+
+### 14. Write Metadata
+
+Thumbnail is already finalized in Step 13b. Thumbnail gate elicitation moved
+to Gate 5 (Step 13 editing gate) where thumbnail_hook is collected before
+assembly so Step 13b can use it.
 
 **Local step — no subagent.**
 
