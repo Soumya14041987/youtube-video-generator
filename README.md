@@ -64,7 +64,7 @@ Open the folder in your assistant and ask for an episode. In Claude Code, Cursor
 
 In other tools say: "Follow AGENTS.md and make an episode about <your topic>."
 
-The assistant asks a few questions (audience, length, style), researches, writes the script, builds the slides, records the voices, assembles the video, makes the thumbnails, and writes the upload package. It stops for your approval at the points that matter.
+See [How to run it](#how-to-run-it) for every way to start an episode.
 
 ### Install as a Claude Code plugin instead
 
@@ -76,6 +76,48 @@ claude plugin install youtube-video-generator@ytvg-marketplace
 ```
 
 Keep your own `.env`, `channel-config.md`, `assets/` and `episodes/` in the folder where you start Claude Code. See [docs/IDE-SETUP.md](docs/IDE-SETUP.md) for details.
+
+## How to run it
+
+Type the command, then what you want. Your topic, a link, a series name or just "next" all work:
+
+```
+/youtube-video-generator What is the Model Context Protocol
+/youtube-video-generator https://example.com/announcement
+/youtube-video-generator https://example.com/spec focus on what changed for beginners
+/youtube-video-generator next in My Series Name
+/youtube-video-generator ideas about Kubernetes
+/youtube-video-generator series: My Series Name, topic: Build your first MCP server
+```
+
+You can also give everything up front, one value per line, and the assistant asks fewer questions:
+
+```
+/youtube-video-generator
+Topic: MCP transports, stdio versus Streamable HTTP
+URL: https://example.com/spec
+Series: My Series Name
+Audience: Beginner
+Duration: long (7 to 10 min)
+```
+
+| After the command | What happens |
+|---|---|
+| nothing | The assistant asks how you want to start |
+| a topic | It researches it and builds the episode |
+| a link | It reads the page, takes the facts, and builds from them. Words after the link are your angle |
+| `next` or `next in <series>` | It reads your `playlists/` plan and `series-log.md`, and builds the first episode marked Planned |
+| `ideas` | It lists 30 title ideas and waits for your pick |
+| a series name plus a topic | It numbers the episode in that series and avoids repeating earlier topics |
+| your own draft script | It keeps your words and fills the gaps |
+
+A series is two plain files on your computer: a plan in `playlists/<name>.md` (start from `examples/playlist.md.example`) and a log in `series-log.md` (start from `examples/series-log.md.example`; the assistant creates it if missing). Series name, badge and host names are set in `channel-config.md`.
+
+In tools without slash commands, write the same thing in plain English: "Follow AGENTS.md and make an episode about <topic or link>."
+
+Every input form, the script file format (`dualhost.json`) and how to build by hand are in [docs/EPISODE-INPUT.md](docs/EPISODE-INPUT.md).
+
+After you type it, the assistant asks a few short questions (audience, length, style, hook), shows the script, and stops for your approval before it spends money on voices. You review `episode.mp4`, the thumbnails and `metadata.md`, then upload to YouTube yourself.
 
 ## Set up your channel
 
@@ -152,7 +194,8 @@ You pay your own providers. The main costs are OpenAI text-to-speech for the nar
 tools/dual_host/       episode builder, thumbnails, metadata, chapters, photo tools
 scripts/               doctor.py and install_ide.py
 config/mcp/            ready-made VidIQ connection files for each tool
-docs/                  IDE-SETUP.md, THUMBNAILS.md, TROUBLESHOOTING.md
+docs/                  IDE-SETUP.md, EPISODE-INPUT.md, THUMBNAILS.md, TROUBLESHOOTING.md
+examples/              starter series-log and playlist files
 AGENTS.md              instructions every assistant reads
 CLAUDE.md              Claude Code instructions (imports AGENTS.md)
 .cursor/ .github/ .kiro/   Cursor rule, Copilot instructions, Kiro steering

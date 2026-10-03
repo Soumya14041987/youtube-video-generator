@@ -1,5 +1,6 @@
 ---
 name: youtube-video-generator
+argument-hint: "[topic | URL | next | ideas | Topic:/URL:/Series: fields]"
 description: Master orchestrator for YouTube video production. Accepts structured input (topic, URL, title, audience level, duration) or bare topic or URL or nothing at all ("what's next"), resolves to a concrete episode spec, then orchestrates the full pipeline — research + web asset fetch, script, diagram generation, voiceover, timeline sync, assembly. Produces engagement-optimized output. Trigger on "/youtube-video-generator", or a request to make a video from a link, or "what's the next video".
 ---
 
@@ -20,6 +21,30 @@ timeline, final video, and metadata.
 **Token discipline**: wrap noisy shell calls with rtk; extract only essential
 facts from URLs; never paste raw responses back. Report decisions in 1–2 lines.
 
+
+## What the user typed
+
+The text typed after the command: $ARGUMENTS
+
+If that line is empty or still shows the literal word `$ARGUMENTS`, nothing was typed (or this tool does not substitute it). Use the user's message instead; if it holds no topic, start at Step 1.
+
+Read the typed text once, decide which of these it is, and skip every gate question the text already answers. Never ask for something the user already gave.
+
+| Typed text | Treat it as | Go to |
+|---|---|---|
+| nothing | no input | Step 1 (workflow question) |
+| starts with `http://` or `https://` | reference URL. Any words after the URL are the user's angle | Step 3 |
+| `next`, `what's next`, `next in <series>` | predict from the playlist | Step 5 |
+| `ideas`, `give me ideas`, `N ideas about <x>` | topic ideation. Stop after the list and wait for a pick | Step 5 |
+| lines starting with `Topic:`, `URL:`, `Title:`, `Series:`, `Audience:`, `Duration:`, `Style:` | structured input | Step 2 |
+| `series: <name>, topic: <x>` or `<x> for <series>` | topic that belongs to a series. Match `<name>` to `playlists/*.md` and `series-log.md` | Step 4 |
+| a long pasted block of narration or slides | draft script (DRAFT mode) | Step 4 |
+| any other sentence | bare topic | Step 4 |
+
+If a URL and a topic are both given, the URL is the source of facts and the topic is the angle. If the URL cannot be fetched, say so and ask for the text instead. Do not invent facts.
+If a series name is given and no `playlists/` file or log matches it, ask once whether to start a new series, then create the files from `examples/playlist.md.example` and `examples/series-log.md.example`.
+Parsing never needs a question. Missing values (audience, length, style) are asked in Step 6.
+
 ---
 
 ## Accepted Input Formats
@@ -29,17 +54,26 @@ facts from URLs; never paste raw responses back. Report decisions in 1–2 lines
 Topic: <what the video is about>
 URL:   <reference page, spec, docs, GitHub release — optional>
 Title: <preferred title or working title — optional>
-Audience: Beginner | Intermediate | Advanced
-Duration: short (60–90s) | long (≤5min)
+Series: <series name — optional>
+Audience: Beginner | Intermediate | Advanced | Mixed
+Duration: short (60–90s) | medium (3–5 min) | long (7–10 min)
+Style: two hosts (default) | single narrator
 ```
 
 All fields except Topic are optional. If Audience/Duration are missing, ask
 via AskUserQuestion (2 questions, 4 options each) before proceeding.
 
-### Bare inputs (legacy, still supported)
+### Bare inputs, still supported
 - **A URL alone** → treat as reference, derive topic from page.
 - **A bare topic / one-liner** → derive everything else.
 - **Nothing / "what's next"** → predict from playlist.
+
+Full list of input forms with examples: `docs/EPISODE-INPUT.md`.
+
+### Which pipeline
+Two-host (`Style: two hosts`) is the default and is what Steps 7–10, then the Dual-Host Mode section, then Steps 13b–15 use.
+Steps 11–13 below describe the older single-narrator pipeline (one voice, sub-agent assembly). Use them only when the user chooses `single narrator`.
+In two-host mode the voices, cue sheet and video all come from `tools/dual_host/build_episode.py`; do not run Steps 11, 12 and 13 as well.
 
 ---
 
@@ -151,9 +185,10 @@ AskUserQuestion (4 questions):
 
 Record: episode number, input mode, duration, audience level, goal, origin.
 
-MCP Zero to Hero rule: every episode runs 7 to 10 minutes. Never ask the
-duration question for this series and never exceed 10 minutes. The dual-host
-builder stops the build above 10 minutes and warns below 7.
+Length rule: if `channel-config.md` sets `Episode Min Minutes` and `Episode Max Minutes`
+(the example file uses 7 and 10), every episode must land in that range. Do not ask the
+duration question then. The dual-host builder stops the build above the maximum and
+warns below the minimum. With no rule set, ask the duration question as usual.
 Language is always English. Script and voiceover are English-only.
 
 ### 7. Spawn Research Agent (youtube-researcher)
@@ -565,10 +600,10 @@ Mandatory thumbnail spec (pass explicitly to asset builder):
   — large text only, no fine detail that disappears at small size
 - Accent color: match channel brand from channel-config.md if present
 
-**How to draw MCP Zero to Hero thumbnails (required method)**
+**How to draw thumbnails (required method)**
 Image models misspell text, clip it at the edges, and sometimes change letters (Episode 4 once came back as "N x 1" instead of "N x M"). So the model draws only the presenter, and the code draws everything else:
 - Presenter shots live in `assets/presenter/` (thinking, skeptical, finger, curious). Make new ones with `tools/dual_host/gen_presenter.py`. They are reusable across every episode, so a normal episode costs nothing for the photo.
-- `tools/dual_host/compose_thumbnails.py` draws the headline (Impact font), the red banner, icons and the "MCP ZERO TO HERO / EPISODE NN" badge inside safe margins. For a new episode write `thumbnail-spec.json` (series number, plus variants `a` and `b` with presenter shot, headline lines, banner) and run `python3 tools/dual_host/compose_thumbnails.py --spec episodes/<folder>`. Two thumbnails maximum.
+- `tools/dual_host/compose_thumbnails.py` draws the headline (Impact font), the red banner, icons and the series badge (from `Series Badge` in `channel-config.md`) with the episode number inside safe margins. For a new episode write `thumbnail-spec.json` (series number, plus variants `a` and `b` with presenter shot, headline lines, banner) and run `python3 tools/dual_host/compose_thumbnails.py episodes/<folder>`. Two thumbnails maximum.
 - Keep headline text to about 6 words, keep it left of the face, and check the result at 168 by 94 pixels before accepting it.
 
 **Step 4 — Score and pick the winner**
@@ -649,7 +684,7 @@ episodes/episode-NN-<slug>/
   metadata.md
 ```
 
-Clean up debug/backup copies. Then append one row to `series-log.md`:
+Clean up debug/backup copies. If `series-log.md` does not exist, create it from `examples/series-log.md.example`. Then append one row to `series-log.md`:
 - Episode, Slug, Title (option A), Format, Duration Pref, Slot Rule,
   Video (yes/no), Date Logged, Topic.
 
@@ -746,13 +781,21 @@ Growth rules for the script and upload
 
 ---
 
-## Dual-Host Mode (mandatory for the MCP Zero to Hero series)
+## Dual-Host Mode (default)
 
-Two voices share every episode: Alex (male, OpenAI voice ash, Indian English accent instruction) and Elena (female, OpenAI voice coral). Voices come from the OpenAI speech model gpt-4o-mini-tts because the Gemini free tier caps speech at 10 requests per day. Gemini stays available with `--tts gemini` once billing is on. One command builds the whole episode from the script in the Production Bible:
+Two voices share every episode. By default they are Alex (male, OpenAI voice ash) and Elena (female, OpenAI voice coral); change the names, voices and style in `channel-config.md` (`Host 1 Name`, `Host 1 Voice`, `Host 1 Style`, and the same for host 2). Voices come from the OpenAI speech model gpt-4o-mini-tts because the Gemini free tier caps speech at 10 requests per day. Gemini stays available with `--tts gemini` once billing is on.
+
+How to run it, in order:
+
+1. Steps 7 to 10 give the research brief, the script as slides, and one image per slide in `episodes/<folder>/visuals/visual-01.png`, `visual-02.png`, and so on. Quiz slides (title contains Exam) also need `visual-NNb.png` showing the answer in green.
+2. Write the script to `episodes/<folder>/dualhost.json` using the format in `docs/EPISODE-INPUT.md`. Speakers are the lowercase host names. Do not write an intro; the builder adds it.
+3. Build:
 
 ```bash
-python3 tools/dual_host/build_episode.py episodes/<episode-folder> --bible MCP-Zero-to-Hero-Production-Bible.md --ep N
+python3 tools/dual_host/build_episode.py episodes/<episode-folder>
 ```
+
+If the user keeps scripts in a Markdown file with `## EPNN` sections and `#### Slide N: Title` blocks, add `--bible <file> --ep N` and the builder writes `dualhost.json` itself. The builder stops with a plain list of problems (missing image, wrong speaker, empty slide) before it spends anything on voices. Fix them and run it again.
 
 Hard rules. Every episode must follow all of them:
 
@@ -760,7 +803,7 @@ Hard rules. Every episode must follow all of them:
 2. Every episode opens with both hosts introducing themselves ("Hi everyone, I'm Alex." then "And I'm Elena..."), then they start explaining. The builder adds this intro automatically unless the script already has it.
 3. Mix the voices intelligently: the hosts alternate, and aim for no more than about four sentences from one host before the other host takes a turn. Split long single-host blocks into shorter back-and-forth turns before generating audio.
 4. Speaking speed is standard: about 150 words per minute, neither slow nor fast. The builder measures each generated line and adjusts its tempo to reach the target, so both voices match. Never fix pace with a single fixed tempo number.
-5. Nothing about the hosts is shown on screen. No portraits, no name tags, no "Speaking" labels, no "Hosts" strip. Slides fill the whole frame. Portraits in `assets/hosts/` are kept only for channel branding.
+5. Nothing about the hosts is shown on screen. No portraits, no name tags, no "Speaking" labels, no "Hosts" strip. Slides fill the whole frame. 
 6. Slides must not show time ranges, slide timestamps, or a bottom series-name strip. Only the title card badge and the end screen may carry the series name.
 7. Timing comes from real audio lengths, never from word counts. The builder adds the exact length of every generated line plus fixed gaps, builds each slide clip frame-exact, and then runs a Whisper check that stops the build if any line drifts more than one second.
 8. Exact words: every line is transcribed on its own by Whisper and compared with the script. Any line below 85 percent match is regenerated automatically, up to three times, before the build continues.
@@ -768,8 +811,8 @@ Hard rules. Every episode must follow all of them:
 10. Speech requests run four at a time. A full episode takes a few minutes and costs a few cents. Never print API keys.
 11. Images: architecture and flow diagrams are drawn programmatically (sharp text). Illustration-style images use the OpenAI image API (gpt-image-1) with the key from `.env`.
 12. Quiz slides: when a slide title contains Exam, the question is read with no answer marked, then a 40 second countdown with a ticking sound runs (the last five ticks are higher and louder), then the correct option turns green and the explanation appears. Change `THINK_PAUSE` in the builder to alter the length.
-13. Follow request, every episode: the end screen slide shows the three follow handles from `channel-config.md` under "Follow Soumyadip to reach out" (LinkedIn, Medium, X). The last spoken line asks viewers to follow Soumyadip on LinkedIn, Medium and X, with links in the description. Every description ends with the follow block from `channel-config.md`. Take links only from that file. Never invent a link.
-14. Episode numbers: use the published order from `channel-config.md` (Episode 1, 2, 3, then 4 for file EP05). Never print the folder or file id on screen, in speech, or in a description.
+13. Follow request, every episode: the end screen slide shows the follow handles from `channel-config.md` under "Follow <Follow Name> to reach out". The last spoken line asks viewers to follow <Follow Name> on those platforms, with links in the description. Every description ends with the follow block from `channel-config.md`. Take links only from that file. Never invent a link.
+14. Episode numbers: use the published order from `channel-config.md` (for example, files EP01, EP03, EP04, EP05 may be published as Episodes 1, 2, 3, 4). Never print the folder or file id on screen, in speech, or in a description.
 
 ---
 

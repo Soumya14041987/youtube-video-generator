@@ -5,6 +5,7 @@ thumbnails and upload details. It works as a Claude Code plugin or as a project 
 
 ## Make an episode
 - Claude Code: run `/youtube-video-generator`, then give a topic, a URL, or say "what's next".
+- Inputs that work after the command: a topic, a URL, `next`, `next in <series>`, `ideas`, or `Topic:`/`URL:`/`Series:`/`Audience:`/`Duration:`/`Style:` lines. See `docs/EPISODE-INPUT.md`.
 - Any other tool: ask it to follow `.claude/skills/youtube-video-generator/SKILL.md` for your topic. That file is the full workflow.
   The sub-agents in `.claude/agents/` are Claude Code only. Other tools should do those steps themselves, in order.
 

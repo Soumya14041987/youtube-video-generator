@@ -70,6 +70,31 @@ def parse_bible(bible, ep):
     return {"episode": ep, "slides": slides}
 
 
+def check_inputs(ep_dir, script):
+    """Stop early with a plain message if the script or its slide images are not usable."""
+    problems = []
+    slides = script.get("slides") or []
+    if not slides:
+        problems.append("dualhost.json has no slides")
+    for s in slides:
+        n = s.get("n", "?")
+        if not s.get("lines"):
+            problems.append(f"slide {n} has no spoken lines")
+        for ln in s.get("lines", []):
+            if ln.get("speaker") not in NAMES:
+                problems.append(f"slide {n}: speaker '{ln.get('speaker')}' is not '{K1}' or '{K2}' (set Host names in channel-config.md)")
+            if not str(ln.get("text", "")).strip():
+                problems.append(f"slide {n}: a line has no text")
+        vis = os.path.join(ep_dir, "visuals", s.get("visual", f"visual-{n}.png"))
+        if not os.path.exists(vis):
+            problems.append(f"slide {n}: image missing: visuals/{os.path.basename(vis)}")
+        q = s.get("quiz")
+        if q and not os.path.exists(os.path.join(ep_dir, "visuals", q["reveal_visual"])):
+            problems.append(f"slide {n}: quiz answer image missing: visuals/{q['reveal_visual']}")
+    if problems:
+        sys.exit("Cannot build this episode yet:\n  - " + "\n  - ".join(problems))
+
+
 # ---------------------------------------------------------------- tts
 def finish_wav(raw, out_wav, text):
     dur = (os.path.getsize(raw) - 44) / (24000 * 2)
@@ -379,14 +404,15 @@ def main():
     sj = os.path.join(ep_dir, "dualhost.json")
     if "parse" in steps and a.bible:
         json.dump(parse_bible(a.bible, a.ep), open(sj, "w"), indent=2)
+    if not os.path.exists(sj):
+        sys.exit(f"{sj} not found. Write it first (see docs/EPISODE-INPUT.md), or pass --bible <file> --ep N to parse a script file.")
     script = json.load(open(sj))
     apply_quiz_defaults(script)
     first = script["slides"][0]["lines"]
     if not first or f"I'm {H1}" not in first[0]["text"]:
         first[0:0] = [dict(x) for x in INTRO]
-    for s in script["slides"]:
-        if not s["lines"]:
-            sys.exit(f"slide {s['n']} has no parsed lines")
+    if any(x in steps for x in ("tts", "timeline", "render")):
+        check_inputs(ep_dir, script)
     if "tts" in steps:
         step_tts(ep_dir, script)
         step_fidelity(ep_dir, script)
