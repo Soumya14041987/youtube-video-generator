@@ -17,6 +17,7 @@ For each episode, in `episodes/episode-NN-name/`:
 | `voiceover.wav` and `audio/lines/` | Narration, one recording per spoken line |
 | `cue-sheet.json`, `cue-sheet.md` | When every slide and sound happens, measured from the real audio |
 | `metadata.md` | Title, description, tags, hashtags, chapters, pinned comment, settings |
+| `shorts/short-NN.mp4` | Optional vertical Shorts cut from the episode |
 | `upload-check.md` | A pass, warn or fail report so a broken upload package is caught before you upload |
 
 ## How the video stays in sync
@@ -147,6 +148,17 @@ claude mcp add --transport http vidiq https://mcp.vidiq.com/mcp
 
 Other tools use a small config file. Ready-made files are in [config/mcp](config/mcp).
 
+## Shorts
+
+One command turns an episode into vertical Shorts with a hook banner, word by word captions and a follow line. It is free and runs on your computer. See [docs/SHORTS.md](docs/SHORTS.md).
+
+```bash
+python3 tools/dual_host/make_short.py episodes/<folder> --suggest 3
+python3 tools/dual_host/make_short.py episodes/<folder> --lines 4-5 --hook "Your hook here"
+```
+
+In your assistant say: "Make 3 Shorts from episode <folder>." Nobody can promise views, likes or subscribers, but strong hooks and clear captions help.
+
 ## Thumbnails
 
 Two options per episode. Text, banners and icons are drawn by code so spelling is always right. A face is optional: use a photo of yourself (cut out locally), generate presenter shots from a reference photo, or leave the face out. See [docs/THUMBNAILS.md](docs/THUMBNAILS.md).
@@ -160,6 +172,7 @@ python3 tools/dual_host/build_episode.py <episode_dir>     # voices, timeline, v
 python3 tools/dual_host/compose_thumbnails.py <episode_dir>
 python3 tools/dual_host/make_metadata.py <episode_dir>     # upload package and readiness report
 python3 tools/dual_host/make_chapters.py <episode_dir>     # chapter list from real timings
+python3 tools/dual_host/make_short.py <episode_dir> --suggest 3   # vertical Shorts
 python3 tools/dual_host/gen_presenter.py <reference_photo> # presenter shots for thumbnails
 python3 tools/dual_host/cutout.py <photo> <out.png>        # cut a person out of a photo
 ```
@@ -194,7 +207,7 @@ You pay your own providers. The main costs are OpenAI text-to-speech for the nar
 tools/dual_host/       episode builder, thumbnails, metadata, chapters, photo tools
 scripts/               doctor.py and install_ide.py
 config/mcp/            ready-made VidIQ connection files for each tool
-docs/                  IDE-SETUP.md, EPISODE-INPUT.md, THUMBNAILS.md, TROUBLESHOOTING.md
+docs/                  IDE-SETUP.md, EPISODE-INPUT.md, THUMBNAILS.md, SHORTS.md, TROUBLESHOOTING.md
 examples/              starter series-log and playlist files
 AGENTS.md              instructions every assistant reads
 CLAUDE.md              Claude Code instructions (imports AGENTS.md)

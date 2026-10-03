@@ -760,11 +760,13 @@ V5. Publish metadata (only after the user approves the exact values)
   slot (Tuesday or Thursday, 9:00 AM India time = 03:30 UTC unless
   `channel-config.md` says otherwise). Cost 5 credits. Never publish without approval.
 
-V6. Shorts (48 hours after publish)
-- Call `vidiq_generate_clips` with the published video URL, a prompt such as
-  "most useful MCPA exam tips and the quiz moment", clipDuration 55, and
-  processingStartSeconds / processingEndSeconds limited to the best 90 seconds so
-  the cost stays near 14 credits instead of 60 or more. Cost is 9 per minute.
+V6. Shorts (free, local, built from the finished episode; do it right after the episode is built)
+- Vertical 1080 by 1920 clips come from `tools/dual_host/make_short.py`. They use the real audio and cue sheet, so sync is exact. No credits are spent.
+- Steps: (1) run `make_short.py <episode_dir> --suggest 3` and read the reasons; (2) read the lines with `--list` and pick up to 3 clips that make sense on their own (a question, a surprising fact, a before and after). Avoid the intro, the quiz and the end screen (the tool refuses those); (3) for each clip write a hook of at most 8 words that states the payoff or poses a question, and a title under 90 characters; (4) build with `make_short.py <episode_dir> --lines A-B --hook "<hook>" --title "<title> #Shorts"`.
+- Each clip is 25 to 55 seconds, ends with a "Follow <Follow Name> for more" line, has word by word captions timed from Whisper on the clip, a blurred backdrop, a slow push in, and a red hook banner for the first 2.8 seconds.
+- It writes `shorts/short-NN.mp4` and `short-NN.md` (title, description, hashtags, pinned comment, upload steps, pass or fail checks). Fix any FAIL. Report WARNs.
+- Post the Short 1 to 2 days after the full episode, then paste the full video link into the Short description. Do not claim any result: views, likes and subscribers cannot be promised. After 48 hours, compare viewed versus swiped away in YouTube Studio and keep the hooks that held viewers.
+- Optional paid alternative: VidIQ `vidiq_generate_clips` on the published URL (clipDuration 55, a 90 second window, about 14 credits). Use it only if the user asks. Never publish a Short without the user's approval.
 
 V7. Music bed (one-time, reused by every episode)
 - One 180 second track lives at `assets/music/bed.mp3`. The builder mixes it in

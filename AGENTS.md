@@ -21,6 +21,7 @@ thumbnails and upload details. It works as a Claude Code plugin or as a project 
 - Thumbnails (two options): `python3 tools/dual_host/compose_thumbnails.py episodes/<folder>`
 - Upload package and readiness check: `python3 tools/dual_host/make_metadata.py episodes/<folder>`
 - Chapter list from the real timeline: `python3 tools/dual_host/make_chapters.py episodes/<folder>`
+- Vertical Shorts from a built episode: `python3 tools/dual_host/make_short.py episodes/<folder> --suggest 3`, then `--lines A-B --hook "..."` (see `docs/SHORTS.md`)
 - Syntax check after editing tools: `python3 -m py_compile tools/dual_host/*.py scripts/*.py`
 - Setup check without keys: `python3 scripts/doctor.py --ci`
 

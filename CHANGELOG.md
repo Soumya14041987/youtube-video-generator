@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+Added
+- Shorts mode: `make_short.py` cuts vertical 1080 by 1920 Shorts from an episode with hook banner, word by word captions and a follow line. Guide: docs/SHORTS.md.
+- `docs/EPISODE-INPUT.md`, example series files, builder input checks, typed-argument handling in the skill.
+
 ## 1.0.0 (2026-10-03)
 
 Added
