@@ -5,6 +5,13 @@ description: Master orchestrator for YouTube video production. Accepts structure
 
 # YouTube Video Generator — Master Orchestrator
 
+**Toolkit root and project folder.** Paths like `tools/dual_host/...` and `scripts/...` below are relative to the toolkit root.
+When this skill runs from a Claude Code plugin install, the toolkit root is `${CLAUDE_PLUGIN_ROOT}`. When the repo is cloned into your
+project, it is the project folder. Your own files (`.env`, `channel-config.md`, `assets/`, `episodes/`) always live in the project
+folder, which is where you start the session. Run `python3 scripts/doctor.py` once to check the setup. In a plugin install the
+sub-agent names carry a prefix, for example `youtube-video-generator:youtube-researcher`; use the prefixed name when spawning them.
+
+
 **Master orchestrator for end-to-end YouTube video production.** Receives structured
 or bare user input, resolves to a concrete episode spec, then invokes subagents
 in sequence to produce research + real web assets, script, visuals, voiceover,
@@ -143,6 +150,10 @@ AskUserQuestion (4 questions):
 ```
 
 Record: episode number, input mode, duration, audience level, goal, origin.
+
+MCP Zero to Hero rule: every episode runs 7 to 10 minutes. Never ask the
+duration question for this series and never exceed 10 minutes. The dual-host
+builder stops the build above 10 minutes and warns below 7.
 Language is always English. Script and voiceover are English-only.
 
 ### 7. Spawn Research Agent (youtube-researcher)
@@ -361,7 +372,8 @@ AskUserQuestion (2 questions):
     - "Male US accent — Orus (American English, neutral presenter tone)"
 ```
 
-Voice is always male English. No female voices. No non-English languages.
+Single-narrator episodes: voice is always male English, no non-English languages.
+Dual-host episodes (MCP Zero to Hero series and any conversational episode): see the Dual-Host Mode section below. It overrides this rule and uses one male and one female voice.
 Map pace choice to atempo value: calm=0.82, slow=0.72, natural=0.90, fast=0.95.
 Map accent choice to Gemini voice name. Pass both to the TTS call below.
 
@@ -443,7 +455,7 @@ AskUserQuestion (2 questions):
     - "Curiosity gap — imply the answer without revealing it (default)"
     - "Bold claim — state the contrarian angle plainly"
     - "Concrete specific — show a named component, number, or before/after"
-    - "Generate all 3 and score them — pick the strongest automatically"
+    - "Two contrasting options — the default pair, then pick one"
 ```
 
 Pass callout_style, end_card, and thumbnail_hook to the assembler and forward
@@ -514,10 +526,11 @@ best callout text visible, most distinctive on-screen element. These
 observations feed the concept drafting below — do not skip and draft from
 script.md alone.
 
-**Step 2 — Draft 3 CTR concepts**
+**Step 2 — Draft 2 CTR concepts (maximum two, never more)**
 
-Generate exactly 3 thumbnail concepts, each anchored on a different
-psychological hook:
+Generate exactly 2 thumbnail concepts, each anchored on a different
+psychological hook. Pick the two most contrasting from this list, leading
+with the hook the user chose:
 
 A. Curiosity gap — implies an answer without giving it away.
    Title format: "The [X] Nobody Talks About" / "Why [X] Actually Means [Y]"
@@ -532,13 +545,14 @@ C. Concrete specific — a named component, number, or before/after from
    Title format: "[Real Named Thing] Explained in [Time]" or "[Number] Things..."
    Visual focal point: the clearest architecture diagram frame extracted above.
 
-If thumbnail_hook was set in the Gate 6 elicitation, lead with that type as
-concept A but still generate all 3.
+If thumbnail_hook was set in the Gate 6 elicitation, that type is concept 1 and
+the most different remaining type is concept 2. Never produce a third. Two
+choices keep the pick easy and keep VidIQ scoring cost low.
 
-**Step 3 — Generate 3 thumbnail PNGs**
+**Step 3 — Generate 2 thumbnail PNGs**
 
-Invoke youtube-asset-builder subagent with the 3 concrete concept briefs.
-Produce: `thumbnails/thumb-a.png`, `thumbnails/thumb-b.png`, `thumbnails/thumb-c.png`
+Invoke youtube-asset-builder subagent with the 2 concrete concept briefs.
+Produce: `thumbnails/thumb-a.png` and `thumbnails/thumb-b.png`
 
 Mandatory thumbnail spec (pass explicitly to asset builder):
 - Dimensions: 1280x720 (all formats — YouTube standard)
@@ -551,16 +565,23 @@ Mandatory thumbnail spec (pass explicitly to asset builder):
   — large text only, no fine detail that disappears at small size
 - Accent color: match channel brand from channel-config.md if present
 
+**How to draw MCP Zero to Hero thumbnails (required method)**
+Image models misspell text, clip it at the edges, and sometimes change letters (Episode 4 once came back as "N x 1" instead of "N x M"). So the model draws only the presenter, and the code draws everything else:
+- Presenter shots live in `assets/presenter/` (thinking, skeptical, finger, curious). Make new ones with `tools/dual_host/gen_presenter.py`. They are reusable across every episode, so a normal episode costs nothing for the photo.
+- `tools/dual_host/compose_thumbnails.py` draws the headline (Impact font), the red banner, icons and the "MCP ZERO TO HERO / EPISODE NN" badge inside safe margins. For a new episode write `thumbnail-spec.json` (series number, plus variants `a` and `b` with presenter shot, headline lines, banner) and run `python3 tools/dual_host/compose_thumbnails.py --spec episodes/<folder>`. Two thumbnails maximum.
+- Keep headline text to about 6 words, keep it left of the face, and check the result at 168 by 94 pixels before accepting it.
+
 **Step 4 — Score and pick the winner**
 
-Judge each of the 3 by these criteria (score 1-3 per criterion):
+Judge each of the 2 by these criteria (score 1-3 per criterion):
 - Legible at small size (168x94px): can you read the text and identify focal point?
 - Unique on this topic: does it look different from the top 5 videos on this topic?
 - Promises a specific payoff: does it make the viewer feel they will gain something?
 - Matches the title: thumbnail concept and chosen title work as a pair?
 
 Highest total score wins. State the one-line reason. Copy winner to
-`thumbnail-final.png` at episode root. Keep all 3 in `thumbnails/`.
+`thumbnail-final.png` at episode root. Keep both in `thumbnails/`. After the
+private upload, VidIQ scoring (stage V4 below) confirms the pick.
 
 **Step 5 — Align metadata.md titles to winning thumbnail**
 
@@ -575,47 +596,22 @@ CTR title rules:
 - Under 60 characters for search truncation
 - Lead keyword within the first 3 words when possible
 
-### 14. Write Metadata
+### 14. Write the Upload Package (generated and checked by code)
 
-Thumbnail is already finalized in Step 13b. Thumbnail gate elicitation moved
-to Gate 5 (Step 13 editing gate) where thumbnail_hook is collected before
-assembly so Step 13b can use it.
+Thumbnail is already finalized in Step 13b. The upload package is built by `tools/dual_host/make_metadata.py`, not typed by hand, so every episode gets the same exact layout and the same checks.
 
-**Local step — no subagent.**
+1. Write `upload-brief.json` in the episode folder. It holds only the episode-specific words: `titles` (3, best first), `target_keyword` (from VidIQ stage V1), `hook` (two lines carrying the keyword and the promise), `summary`, optional `hindi_summary` (marked as an English-language video), `learn` bullets, `chapter_titles` (one per chapter), `sources`, `next_episode`, `series_blurb`, `channel_blurb`, `quiz_cta`, `hashtags` (3 to 5), `tags`, `pinned_comment` (use `{reveal}` for the answer time), `evidence` (the VidIQ numbers), `short_window_slides`, `series_number` (published order, see channel-config.md).
+2. Run `python3 tools/dual_host/make_metadata.py episodes/<folder>`. It reads the real chapter times from `cue-sheet.json`, the follow links and subscribe link from `channel-config.md`, and writes `metadata.md` and `upload-check.md`.
+3. The description always follows the standard layout in `channel-config.md`: hook, summary, optional Hindi summary, what you will learn, chapters, sources, next episode, series blurb, about the channel, subscribe link, follow block, quiz ask, hashtags last.
+4. VidIQ-based title choice (credits permitting): call `vidiq_generate_titles` once (5 credits) with `competitorTitles` taken from the V2 outlier results, then keep the highest scored titles that also pass the keyword rule. If credits are low, call `vidiq_score_title` once on the recommended title instead. Record the scores in `evidence`.
+5. Publish slot, upload settings, the Short plan and the after-upload steps come from the generator. Do not hand-write them.
 
-Write `metadata.md`:
+### 14b. Upload Readiness Gate (must pass before telling the user the episode is ready)
 
-**Title options** (3 options):
-- Option A: Curiosity gap ("Why [X] Changes Everything About [Y]")
-- Option B: Outcome-first ("How to [Result] with [Topic] in [Time]")
-- Option C: Contrarian ("The [Topic] Mistake Everyone Makes")
-If user supplied a Title field in structured input, use it as Option A and
-write B + C as alternates.
+`make_metadata.py` exits with an error if anything fails. It checks: title at most 100 characters and the keyword in its first 60; keyword in the first two description lines; description at most 5,000 characters with no angle brackets; tags at most 500 characters in total; at most 15 hashtags, at least 3; chapters start at 0:00, at least 3 of them, each at least 10 seconds; the follow links and subscribe link from `channel-config.md` are present and no outdated link appears; episode numbers match the published series number; `thumbnail-final.png` is 1280 by 720 and under 2 MB; exactly two thumbnail options; the video is 7 to 10 minutes, h264 plus aac, with the index at the start, and matches the cue sheet length.
 
-**Tags**: comma-separated YouTube tags — lead with keywords matching the
-topic's niche or certification domain if this is exam-prep content.
+Fix every FAIL and re-run. Report any WARN to the user. The YouTube upload itself is manual (VidIQ and this tool cannot upload to YouTube): the user uploads `episode.mp4` as Private using `metadata.md`, then sends the link so the thumbnail score, pinned comment and any metadata update can be done.
 
-**Hashtags**: 3–5 hashtags — mix of broad and topic-specific.
-
-**Description draft**:
-- First 2 lines visible before "more" fold — must contain the promise.
-- Timestamps if long format.
-- Full series context.
-
-**Connect footer**: Read social links from `channel-config.md` at the
-project root. If the file exists, append those links verbatim as a
-"Connect with me:" block. If the file is missing, leave a placeholder
-comment (`# TODO: add your social links from channel-config.md`) and
-tell the user to copy `channel-config.md.example` and fill it in.
-
-**Publish slot**: Read the schedule from `channel-config.md` if present.
-Default rules when not configured:
-- Short beginner content: Tue/Thu/Sat/Sun, 8 to 9 PM local time
-- Long advanced content: Saturday, 9 to 10 AM local time
-- State which rule applied.
-
-**Engagement checklist** (append to metadata.md):
-```
 ## Engagement Checklist
 - [ ] Hook states specific outcome in first 5s
 - [ ] Curiosity gap opened in first 10s
@@ -672,6 +668,108 @@ both `voiceover.wav` and `cue-sheet.json` are stale and must be regenerated.
 
 **Web asset quality rule**: Any web-fetched image < 200px wide or > 5MB
 is rejected. Replace with generated visual or different web source.
+
+---
+
+## VidIQ Growth Stages (MCP Zero to Hero and any episode)
+
+Goal of every video: maximum views, likes and new subscribers. These stages use
+the VidIQ connector (tools named `mcp__...vidiq_*`). They are added around the
+existing pipeline. They do not replace the builder, the OpenAI voices, the
+timing checks or the local video assembly.
+
+Not used, on purpose. VidIQ voiceover (one voice only, 14 credits per 1,000
+characters, no Indian accent), VidIQ compose (capped at 240 seconds, loses exact
+sync and the quiz countdown), and per-episode music (25 credits each).
+
+Credit guard. Call `vidiq_balance` (free) before any stage that costs credits.
+Never start a stage if it would leave fewer than 20 credits. Costs: outliers 5,
+thumbnail score 5, publish update 5, shorts 9 per minute of source, music 25.
+Keyword research cost is not listed, so check the balance before and after the
+first run and note it here. Typical episode: about 35 credits.
+
+V1. Keyword research for India (before Step 7, research)
+- Call `vidiq_keyword_research` with mode country_search, keyword the episode
+  topic, country IN, limit 10.
+- Also call it with mode questions, language en, to find the questions viewers type.
+- Keep the keyword with the highest country volume and the lowest competition as
+  TOP_KEYWORD. Keep 3 to 5 question keywords for the description and the quiz.
+- Save to `growth-brief.md` in the episode folder. TOP_KEYWORD goes in the title
+  (within the first 3 words when it reads naturally), the first two description
+  lines, the first 30 seconds of the script, and the tags.
+
+V2. Outlier research (before Step 9, script)
+- Call `vidiq_outliers` with the topic as keyword, language en, publishedWithin
+  threeMonths, maxSubscribers 50000, limit 10. Cost 5 credits.
+- From the results record the winning title patterns and thumbnail patterns in
+  `growth-brief.md`. Use them to shape the hook and the two thumbnail concepts.
+  Copy patterns, never titles or images.
+
+V3. Metadata that serves search (Step 14, generated by code)
+- Fill `upload-brief.json` from `growth-brief.md`, then run `make_metadata.py`. It builds title options, description, tags and hashtags in the standard layout and checks them. The first
+  two description lines carry TOP_KEYWORD and the promise. Add chapters from
+  `tools/dual_host/make_chapters.py`. Add a pinned comment that asks viewers to
+  answer the quiz.
+
+V4. Thumbnail score (after the private upload, maximum two thumbnails)
+- The scoring tool needs a YouTube video ID, so the user uploads the video as
+  Private first and sets thumbnail 1.
+- Call `vidiq_score_thumbnail` with the video ID and the title. Cost 5 credits.
+  Set thumbnail 2, score again. Keep the higher one. If both score under 70,
+  regenerate only the weaker one once. Never go beyond two thumbnails.
+
+V5. Publish metadata (only after the user approves the exact values)
+- Call `vidiq_user_channels` for the channel ID. Show the user the exact title,
+  description, tags and publish time. Only after they approve, call
+  `vidiq_update_video` with privacyStatus private and publishAt set to the next
+  slot (Tuesday or Thursday, 9:00 AM India time = 03:30 UTC unless
+  `channel-config.md` says otherwise). Cost 5 credits. Never publish without approval.
+
+V6. Shorts (48 hours after publish)
+- Call `vidiq_generate_clips` with the published video URL, a prompt such as
+  "most useful MCPA exam tips and the quiz moment", clipDuration 55, and
+  processingStartSeconds / processingEndSeconds limited to the best 90 seconds so
+  the cost stays near 14 credits instead of 60 or more. Cost is 9 per minute.
+
+V7. Music bed (one-time, reused by every episode)
+- One 180 second track lives at `assets/music/bed.mp3`. The builder mixes it in
+  automatically at low volume and dips it under speech. Do not generate a new
+  track per episode. Delete the file to build an episode with no music.
+
+Growth rules for the script and upload
+1. The hook states the payoff in the first 15 seconds and uses TOP_KEYWORD.
+2. Ask for one like right after a value moment (the quiz answer), and ask to
+   subscribe once, at the end, tied to the next episode title.
+3. The quiz question goes in the pinned comment, which lifts comments.
+4. The end screen shows the next episode so viewers keep watching the series.
+5. Length stays between 7 and 10 minutes.
+
+---
+
+## Dual-Host Mode (mandatory for the MCP Zero to Hero series)
+
+Two voices share every episode: Alex (male, OpenAI voice ash, Indian English accent instruction) and Elena (female, OpenAI voice coral). Voices come from the OpenAI speech model gpt-4o-mini-tts because the Gemini free tier caps speech at 10 requests per day. Gemini stays available with `--tts gemini` once billing is on. One command builds the whole episode from the script in the Production Bible:
+
+```bash
+python3 tools/dual_host/build_episode.py episodes/<episode-folder> --bible MCP-Zero-to-Hero-Production-Bible.md --ep N
+```
+
+Hard rules. Every episode must follow all of them:
+
+1. Each spoken turn is its own text-to-speech call in the speaker's own voice. Never read both hosts with one voice.
+2. Every episode opens with both hosts introducing themselves ("Hi everyone, I'm Alex." then "And I'm Elena..."), then they start explaining. The builder adds this intro automatically unless the script already has it.
+3. Mix the voices intelligently: the hosts alternate, and aim for no more than about four sentences from one host before the other host takes a turn. Split long single-host blocks into shorter back-and-forth turns before generating audio.
+4. Speaking speed is standard: about 150 words per minute, neither slow nor fast. The builder measures each generated line and adjusts its tempo to reach the target, so both voices match. Never fix pace with a single fixed tempo number.
+5. Nothing about the hosts is shown on screen. No portraits, no name tags, no "Speaking" labels, no "Hosts" strip. Slides fill the whole frame. Portraits in `assets/hosts/` are kept only for channel branding.
+6. Slides must not show time ranges, slide timestamps, or a bottom series-name strip. Only the title card badge and the end screen may carry the series name.
+7. Timing comes from real audio lengths, never from word counts. The builder adds the exact length of every generated line plus fixed gaps, builds each slide clip frame-exact, and then runs a Whisper check that stops the build if any line drifts more than one second.
+8. Exact words: every line is transcribed on its own by Whisper and compared with the script. Any line below 85 percent match is regenerated automatically, up to three times, before the build continues.
+9. The slide changes 0.3 seconds before the first line of that slide starts.
+10. Speech requests run four at a time. A full episode takes a few minutes and costs a few cents. Never print API keys.
+11. Images: architecture and flow diagrams are drawn programmatically (sharp text). Illustration-style images use the OpenAI image API (gpt-image-1) with the key from `.env`.
+12. Quiz slides: when a slide title contains Exam, the question is read with no answer marked, then a 40 second countdown with a ticking sound runs (the last five ticks are higher and louder), then the correct option turns green and the explanation appears. Change `THINK_PAUSE` in the builder to alter the length.
+13. Follow request, every episode: the end screen slide shows the three follow handles from `channel-config.md` under "Follow Soumyadip to reach out" (LinkedIn, Medium, X). The last spoken line asks viewers to follow Soumyadip on LinkedIn, Medium and X, with links in the description. Every description ends with the follow block from `channel-config.md`. Take links only from that file. Never invent a link.
+14. Episode numbers: use the published order from `channel-config.md` (Episode 1, 2, 3, then 4 for file EP05). Never print the folder or file id on screen, in speech, or in a description.
 
 ---
 

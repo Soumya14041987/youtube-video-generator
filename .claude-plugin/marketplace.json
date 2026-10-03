@@ -1,0 +1,12 @@
+{
+  "name": "ytvg-marketplace",
+  "description": "YouTube Video Generator: a topic in, a finished episode out.",
+  "owner": { "name": "Soumyadip Chatterjee" },
+  "plugins": [
+    {
+      "name": "youtube-video-generator",
+      "source": "./",
+      "description": "Script, diagrams, two-host voices, timeline sync, video, thumbnails and upload details for YouTube episodes."
+    }
+  ]
+}

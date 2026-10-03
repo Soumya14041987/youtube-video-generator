@@ -1,0 +1,12 @@
+---
+description: Make a YouTube episode from a topic with the youtube-video-generator workflow (script, visuals, voices, video, thumbnails, upload package)
+alwaysApply: false
+---
+
+Use this when the user asks for a YouTube video, episode, script, thumbnail or upload details.
+
+- The full workflow is the skill at `.claude/skills/youtube-video-generator/SKILL.md`. Cursor loads it as a skill: type `/youtube-video-generator`.
+- Cursor does not run Claude Code sub-agents. Do each step from the skill yourself, in order, and check each output before the next step.
+- Run `python3 scripts/doctor.py` first. Do not continue while it shows a FAIL.
+- Tool commands, file layout and rules are in `AGENTS.md`. Setup for every IDE is in `docs/IDE-SETUP.md`.
+- Never print or commit API keys.

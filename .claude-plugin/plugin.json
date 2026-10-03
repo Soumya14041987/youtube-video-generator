@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "youtube-video-generator",
+  "displayName": "YouTube Video Generator",
+  "version": "1.0.0",
+  "description": "Topic or URL in, complete YouTube episode out: script, diagrams, two-host voices, timeline sync, video, thumbnails and upload details.",
+  "author": {
+    "name": "Soumyadip Chatterjee",
+    "url": "https://github.com/Soumya14041987"
+  },
+  "homepage": "https://github.com/Soumya14041987/youtube-video-generator",
+  "repository": "https://github.com/Soumya14041987/youtube-video-generator",
+  "license": "MIT",
+  "keywords": [
+    "youtube",
+    "video",
+    "thumbnail",
+    "voiceover",
+    "seo",
+    "agentic"
+  ],
+  "skills": [
+    "./.claude/skills/youtube-video-generator",
+    "./.claude/skills/youtube-episode",
+    "./.claude/skills/youtube-thumbnail",
+    "./.claude/skills/archify",
+    "./.claude/skills/token-optimizer"
+  ],
+  "agents": [
+    "./.claude/agents/youtube-researcher.md",
+    "./.claude/agents/youtube-archify-diagrammer.md",
+    "./.claude/agents/youtube-asset-builder.md",
+    "./.claude/agents/youtube-cue-sheet-builder.md",
+    "./.claude/agents/youtube-video-assembler.md"
+  ],
+  "hooks": "./hooks/hooks.json"
+}

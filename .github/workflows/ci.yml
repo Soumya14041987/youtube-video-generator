@@ -1,0 +1,42 @@
+name: checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Pillow
+        run: pip install "Pillow>=10.1"
+      - name: Compile every Python file
+        run: python -m py_compile tools/dual_host/*.py scripts/*.py
+      - name: Setup checker (no keys needed)
+        run: python scripts/doctor.py --ci
+      - name: JSON files are valid
+        run: |
+          python - <<'EOF'
+          import glob, json
+          files = glob.glob("config/mcp/*.json") + glob.glob(".claude-plugin/*.json") + ["hooks/hooks.json", ".claude/settings.json"]
+          for f in files:
+              json.load(open(f))
+              print("ok", f)
+          EOF
+      - name: Relative links in Markdown files
+        run: python scripts/check_links.py
+      - name: Thumbnail smoke test (no face, no keys)
+        run: |
+          mkdir -p smoke
+          cat > smoke/thumbnail-spec.json <<'EOF'
+          {"series_number": "1",
+           "a": {"shot": "none", "lines": [["WHAT IS", 190, "YELLOW"], ["MCP?", 300, "GREEN"]], "banner": "TEST", "banner_size": 58, "max_w": 590},
+           "b": {"shot": "none", "lines": [["MCP", 230, "YELLOW"]], "banner": "TEST", "banner_size": 58, "max_w": 590}}
+          EOF
+          python tools/dual_host/compose_thumbnails.py smoke
+          test -s smoke/thumbnails/thumb-a.png && test -s smoke/thumbnails/thumb-b.png

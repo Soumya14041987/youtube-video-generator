@@ -1,271 +1,181 @@
-
 # YouTube Video Generator
 
-A Claude Code plugin that turns a topic, a URL, or "what's next" into a
-finished YouTube video — script, visuals, voiceover, timeline sync, final
-MP4, thumbnail, and upload metadata — fully automated inside your terminal.
+Turn a topic into a finished YouTube episode: script, slides, two-voice narration, a video that matches the audio exactly, two thumbnails, and a full upload package with title, description, tags, chapters and pinned comment.
 
-MIT License. Open source. Works with any YouTube channel.
+It runs inside an AI coding assistant (Claude Code, VS Code, Cursor, Kiro, PyCharm and others). You describe the episode. The assistant does the work and keeps your API keys on your own computer.
 
----
+MIT licensed. Works for any channel. Your channel details live in one file, `channel-config.md`.
 
-## Why this exists
+## What you get
 
-Producing a decent YouTube video by hand means running six separate tools:
-a research tool, a script editor, a design tool, a screen recorder or slide
-deck, audio software, and a video editor. Each handoff costs time and breaks
-your flow.
+For each episode, in `episodes/episode-NN-name/`:
 
-This plugin does all six steps inside Claude Code, in order, without you
-switching windows. You type a topic. You get a video.
+| File | What it is |
+|---|---|
+| `episode.mp4` | The finished video (1080p, H.264 and AAC) |
+| `thumbnails/thumb-a.png`, `thumb-b.png`, `thumbnail-final.png` | Exactly two thumbnail options, plus the one chosen by default |
+| `voiceover.wav` and `audio/lines/` | Narration, one recording per spoken line |
+| `cue-sheet.json`, `cue-sheet.md` | When every slide and sound happens, measured from the real audio |
+| `metadata.md` | Title, description, tags, hashtags, chapters, pinned comment, settings |
+| `upload-check.md` | A pass, warn or fail report so a broken upload package is caught before you upload |
 
----
+## How the video stays in sync
 
-## What makes it different from other AI video tools
+Every line of the script is spoken by its own text-to-speech call. The length of each recording is read from the file, so the timeline is built from real numbers and never from word counts. A speech-recognition check (Whisper) then confirms every line says what the script says, and any line that does not match is regenerated. Slides change a fraction of a second before the narration reaches them, and quizzes get a 40 second ticking countdown followed by the green answer.
 
-| Other tools | This plugin |
-|-------------|-------------|
-| Web UI, manual upload steps | Runs inside your terminal via Claude Code |
-| One monolithic prompt | Six specialized subagents, each with fresh context |
-| Generic talking-head output | Architecture diagrams via Archify, animated clips via PIL/ffmpeg |
-| Locked to one creator style | Reads your channel identity from channel-config.md |
-| 150,000-200,000 tokens per video | 80,000-120,000 tokens per video (fresh context per phase) |
-| Starts over if one step fails | Detects existing files and skips completed phases |
+## Which tools work
 
----
+| Tool | Skills load from | Sub-agents | Extra step |
+|---|---|---|---|
+| Claude Code (terminal) | `.claude/skills` | Yes | none |
+| Claude Code in VS Code, Cursor, Kiro | `.claude/skills` | Yes | install the extension |
+| Claude Code in PyCharm and JetBrains IDEs | `.claude/skills` | Yes | install the plugin |
+| VS Code with Copilot | `.claude/skills` | No | none |
+| Cursor | `.claude/skills` | No | none |
+| Kiro | `.kiro/skills` | No | `python3 scripts/install_ide.py --ide kiro` |
+| PyCharm with Junie | `.junie/skills` | No | `python3 scripts/install_ide.py --ide junie` |
+| Codex, Zed, Warp, Gemini CLI and other tools that read AGENTS.md | varies | No | see the guide |
 
-## What you get from one command
+Without sub-agents, one agent does every step itself. The output is the same.
 
-```
-/youtube-video-generator
-```
+The full step by step guide for each tool, including the VidIQ connection, is in [docs/IDE-SETUP.md](docs/IDE-SETUP.md).
 
-From a topic like "What is model context protocol?" you get:
+## Quick start
 
-- script.md — four-section script with visual and animation tags
-- visuals/ — PNG diagrams and animated diagram clips
-- thumbnail-final.png — high-CTR thumbnail
-- voiceover.wav — narration at 24kHz (Gemini TTS, Puck voice)
-- cue-sheet.json — word-level audio timestamps via forced alignment
-- episode.mp4 — fully assembled video with Ken Burns pans and callout text
-- metadata.md — title options, tags, hashtags, publish slot
-
-All files land in episodes/episode-NN-your-slug/.
-
----
-
-## Step-by-step: first time setup
-
-### 1. Install Claude Code
-
-If you do not have Claude Code yet, install it and make sure you can run
-slash commands in a project directory.
-
-### 2. Clone this repo into your project
+You need Python 3.10 or newer, ffmpeg, and an OpenAI API key. Node 18 or newer is needed only for the architecture diagram skill.
 
 ```bash
 git clone https://github.com/Soumya14041987/youtube-video-generator.git
+cd youtube-video-generator
+python3 -m venv .venv && source .venv/bin/activate     # Windows: py -3 -m venv .venv; .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cp .env.example .env                                   # add your OPENAI_API_KEY
+cp channel-config.md.example channel-config.md         # fill in your channel details
+python3 scripts/doctor.py                              # must show 0 FAIL
 ```
 
-Or copy the .claude/ directory into an existing project.
+Install ffmpeg first if you do not have it: macOS `brew install ffmpeg`, Windows `winget install ffmpeg`, Ubuntu `sudo apt install ffmpeg`.
 
-### 3. Configure your channel
-
-```bash
-cp channel-config.md.example channel-config.md
-```
-
-Open channel-config.md and fill in your channel name, social links, publish
-schedule, and end-card text. This file stays local and is never committed.
-
-### 4. Set your Gemini API key
-
-The voiceover step uses Gemini TTS. Set the key in your environment:
-
-```bash
-export GEMINI_API_KEY=your-key-here
-```
-
-Add it to your shell profile (.zshrc or .bashrc) so it persists.
-
-### 5. Install ffmpeg
-
-Video assembly requires ffmpeg. On Mac:
-
-```bash
-brew install ffmpeg
-```
-
-### 6. Install whisper for forced alignment
-
-The cue-sheet step aligns narration to audio timestamps using whisper.
-
-```bash
-pip install openai-whisper
-```
-
-### 7. Make your first video
-
-In Claude Code, run:
+Open the folder in your assistant and ask for an episode. In Claude Code, Cursor, VS Code and Junie type:
 
 ```
 /youtube-video-generator
 ```
 
-Then type a topic, paste a URL, or say "what's next" if you have a playlist
-file set up.
+In other tools say: "Follow AGENTS.md and make an episode about <your topic>."
 
----
+The assistant asks a few questions (audience, length, style), researches, writes the script, builds the slides, records the voices, assembles the video, makes the thumbnails, and writes the upload package. It stops for your approval at the points that matter.
 
-## Step-by-step: making a video
+### Install as a Claude Code plugin instead
 
-### Give it a topic
+Use this if you want the skills in every project without cloning:
 
-```
-What is model context protocol?
-```
-
-The orchestrator asks two questions:
-- Duration: Short (60-90 seconds) or Long (up to 5 minutes)?
-- Audience: Beginner, Intermediate, or Advanced?
-
-Answer both and the full pipeline runs.
-
-### Give it a URL
-
-```
-https://example.com/some-announcement
+```bash
+claude plugin marketplace add Soumya14041987/youtube-video-generator
+claude plugin install youtube-video-generator@ytvg-marketplace
 ```
 
-It fetches the page, extracts key facts, derives a topic, and runs the same
-pipeline.
+Keep your own `.env`, `channel-config.md`, `assets/` and `episodes/` in the folder where you start Claude Code. See [docs/IDE-SETUP.md](docs/IDE-SETUP.md) for details.
 
-### Let it decide
+## Set up your channel
 
-```
-what's next
-```
+Edit `channel-config.md`. Every value is optional except the subscribe link or channel ID.
 
-It reads your playlists/ folder, finds the first unproduced episode, confirms
-with you, then runs.
+| Setting | Used for |
+|---|---|
+| `Channel Name`, `Presenter`, `Follow Name` | Spoken intro and end screen |
+| `Series Name`, `Series Badge` | Thumbnail badge and descriptions |
+| `Host 1 Name`, `Host 2 Name` | The two speakers (defaults Alex and Elena) |
+| `Episode Min Minutes`, `Episode Max Minutes` | Length check (0 turns it off) |
+| `Channel ID` or `Subscribe link` | The subscribe link in every description |
+| `LinkedIn`, `Medium`, `X`, `GitHub`, `Instagram`, `Website`, `AWS Builder Center` | Follow links added to descriptions |
+| `Banned Links` | Words that must never appear in a description (catches wrong links) |
+| `Publish slot` | Suggested day and time |
+| `Presenter Look` | Describes the presenter for generated photos |
 
----
+## Optional: VidIQ for growth
 
-## What each phase does
+If you connect the VidIQ MCP server, the assistant also researches keywords for your audience, finds outlier videos in your niche, scores titles and thumbnails, and can update a live video after you approve it. Without VidIQ those steps are skipped and everything else still works. VidIQ cannot upload the video file itself. Upload `episode.mp4` in YouTube Studio as Private and paste in `metadata.md`.
 
-Phase 1 — Input resolution (steps 1-5):
-- Classify your input (structured, URL, bare topic, or predict next)
-- Check for duplicate episodes in series-log.md
-- Ask about duration and audience if not given
-- Assign an episode number and folder path
+Connect it with one command in Claude Code:
 
-Phase 2 — Production (steps 6-15):
-- Step 6: Read series continuity, assign episode folder
-- Step 7: Research subagent — returns structured brief, facts, sources
-- Step 8: Write script.md — four sections, visual and animation tags
-- Step 9: Diagram subagent — real architecture diagrams for infrastructure tags
-- Step 10: Asset builder subagent — PNG visuals, animated clips, thumbnails
-- Step 11: Generate voiceover.wav locally via Gemini TTS
-- Step 12: Cue sheet subagent — forced alignment timestamps
-- Step 13: Assembly subagent — ffmpeg composite, Ken Burns pans, callout text
-- Step 14: Write metadata.md — titles, tags, description, publish slot
-- Step 15: Assemble output folder, append to series-log.md
-
-Each step validates its output before passing to the next. If something fails
-you are asked: retry, skip, or stop. Nothing fails silently.
-
----
-
-## File layout
-
-```
-your-project/
-  .claude/
-    skills/
-      youtube-video-generator/   <- orchestrator skill
-      youtube-episode/           <- legacy single-agent pipeline
-      youtube-thumbnail/         <- standalone thumbnail optimizer
-      archify/                   <- architecture diagram engine
-    agents/
-      youtube-researcher.md
-      youtube-archify-diagrammer.md
-      youtube-asset-builder.md
-      youtube-cue-sheet-builder.md
-      youtube-video-assembler.md
-    commands/
-      youtube-episode.md
-  channel-config.md.example      <- copy this to channel-config.md
-  LICENSE
-  .gitignore
+```bash
+claude mcp add --transport http vidiq https://mcp.vidiq.com/mcp
 ```
 
-Your episodes/ folder, series-log.md, and playlists/ are excluded from git
-by default. They are yours, not part of the plugin.
+Other tools use a small config file. Ready-made files are in [config/mcp](config/mcp).
 
----
+## Thumbnails
 
-## Credential safety
+Two options per episode. Text, banners and icons are drawn by code so spelling is always right. A face is optional: use a photo of yourself (cut out locally), generate presenter shots from a reference photo, or leave the face out. See [docs/THUMBNAILS.md](docs/THUMBNAILS.md).
 
-GEMINI_API_KEY is read only in the voiceover step by the orchestrator.
-It is never passed to subagents. It is never printed in any output.
-If the key is missing the pipeline stops before attempting TTS.
+## Tools you can run yourself
 
----
+```bash
+python3 scripts/doctor.py                                  # check your setup
+python3 scripts/install_ide.py --ide kiro                  # put skills where Kiro or Junie look
+python3 tools/dual_host/build_episode.py <episode_dir>     # voices, timeline, video
+python3 tools/dual_host/compose_thumbnails.py <episode_dir>
+python3 tools/dual_host/make_metadata.py <episode_dir>     # upload package and readiness report
+python3 tools/dual_host/make_chapters.py <episode_dir>     # chapter list from real timings
+python3 tools/dual_host/gen_presenter.py <reference_photo> # presenter shots for thumbnails
+python3 tools/dual_host/cutout.py <photo> <out.png>        # cut a person out of a photo
+```
 
-## Customizing for your channel
+## Cost and time
 
-Everything creator-specific lives in channel-config.md:
+You pay your own providers. The main costs are OpenAI text-to-speech for the narration (about one recording per spoken line) and your assistant's usage. Presenter photo generation and VidIQ credits are optional extras. Prices change, so check the current pricing pages. A 7 to 10 minute episode usually takes a few hours of your attention, mostly for review and approval.
 
-- Channel name and tagline shown in end-cards and metadata footers
-- Social links shown in video descriptions
-- Publish schedule rules (which days, which times)
-- End-card wordmark text and series tag
-- Channel icon overlay badge style
+## Safety
 
-If channel-config.md is missing, the plugin runs with placeholder text and
-tells you which lines to fill in.
+- API keys are read from the environment or `.env`, and are never printed, logged, or sent to sub-agents.
+- `.env`, `channel-config.md`, `episodes/`, your presenter photos and music, and other creator files are in `.gitignore`. `python3 scripts/doctor.py` fails if `.env` is not ignored or a key is found in a file git would commit.
+- Nothing is published for you. You upload the video. VidIQ updates to live videos happen only after you say yes.
+- MCP servers and plugins run with your permissions. Read what you approve.
 
----
+## Known limits
+
+- Sub-agents exist only in Claude Code. Other tools run the same steps in one agent.
+- The built-in photo cutout uses macOS 14 or newer. On Windows and Linux install `rembg` or cut the photo out yourself.
+- The Whisper `base` model is a one time download of roughly 140 MB.
+- Gemini voices are optional (`--tts gemini`) and the free tier is only about 10 requests a day.
+- Kiro and Junie only read skills from their own folders, so run the installer once.
+- VidIQ credits are limited by your plan, and it cannot upload the video file.
+- Details for Windsurf and some other tools come from their public docs and may have changed. Check their docs if a step fails.
+
+## Folder layout
+
+```
+.claude/skills/        the skills (video generator, episode, thumbnail, Archify, token optimizer)
+.claude/agents/        five sub-agents (Claude Code only)
+.claude-plugin/        plugin and marketplace files
+tools/dual_host/       episode builder, thumbnails, metadata, chapters, photo tools
+scripts/               doctor.py and install_ide.py
+config/mcp/            ready-made VidIQ connection files for each tool
+docs/                  IDE-SETUP.md, THUMBNAILS.md, TROUBLESHOOTING.md
+AGENTS.md              instructions every assistant reads
+CLAUDE.md              Claude Code instructions (imports AGENTS.md)
+.cursor/ .github/ .kiro/   Cursor rule, Copilot instructions, Kiro steering
+```
+
+Your own files (kept out of git): `.env`, `channel-config.md`, `episodes/`, `playlists/`, `series-log.md`, `assets/presenter/`, `assets/music/`.
 
 ## Troubleshooting
 
-Voiceover too short for the chosen format:
-Edit script.md to expand the middle section. Regenerate from step 11.
-
-Visual does not match narration:
-Read cue-sheet.md and look for suspiciously short or long windows. Edit
-script.md to split the problem paragraph. Regenerate from step 11.
-
-Research subagent returns malformed output:
-The orchestrator catches this and retries automatically. If it fails twice,
-confirm and proceed — the script step fills in the gaps.
-
-Assembly subagent fails:
-Check that voiceover.wav exists and that all visual-NN.png files named in
-cue-sheet.json are present in visuals/.
-
----
-
-## Performance
-
-- Wall-clock time per episode: 30-40 minutes
-- Token cost per episode: 80,000-120,000 (30-40 percent less than monolithic)
-- Subagents spawned: 5 per full pipeline run
-- Quality gates: 8 mandatory validations
-
----
-
-## License
-
-MIT License. Copyright 2026 Soumyadip Chatterjee.
-See LICENSE for full text.
-
----
+Run `python3 scripts/doctor.py` first. Then see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## Contributing
 
-Open an issue with:
-- Which step failed
-- The exact error message
-- What input you gave the orchestrator
-- Whether the episode folder exists and which files are present
+Issues and pull requests are welcome. Before you open one, run:
+
+```bash
+python3 -m py_compile tools/dual_host/*.py scripts/*.py
+python3 scripts/doctor.py --ci
+python3 scripts/check_links.py
+```
+
+Do not commit keys, channel files, or personal photos.
+
+## License and credits
+
+MIT. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The bundled Archify skill is MIT licensed, by tt-a1i, based on Cocoon-AI/architecture-diagram-generator (MIT). Higgsfield skills are third party, are not part of this repository, and are not needed. VidIQ, OpenAI, Anthropic, Cursor, Kiro and JetBrains are trademarks of their owners and are not affiliated with this project.

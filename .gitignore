@@ -29,7 +29,7 @@ channel-config.md
 # Unrelated plugins — managed separately, not part of this repo
 :LinkedIn-blog-architect/
 .agents/
-.claude/skills/higgsfield-*/
+.claude/skills/higgsfield-*
 
 # Local machine settings
 .claude/settings.local.json
@@ -38,3 +38,18 @@ channel-config.md
 .env
 *.env
 .env.*
+assets/presenter/real/
+
+# Creator-specific media and series files: these belong to one channel, not to the toolkit
+MCP-Zero-to-Hero-Production-Bible.md
+*-youtube-channel-banner.jpg
+youtube-profile-image.jpg
+*youtube-thumbnail-sample*.jpg
+assets/presenter/*
+!assets/presenter/README.md
+assets/music/*
+!assets/music/README.md
+assets/hosts/
+
+# Per-episode workfiles that may hold keys or personal details
+*.local.json

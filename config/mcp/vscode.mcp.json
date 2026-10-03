@@ -1,0 +1,8 @@
+{
+    "servers": {
+        "vidiq": {
+            "type": "http",
+            "url": "https://mcp.vidiq.com/mcp"
+        }
+    }
+}
