@@ -1,0 +1,3 @@
+#!/bin/sh
+# Blocks commits that contain keys, private files, or details copied from your own channel files.
+python3 scripts/check_private.py --staged || exit 1

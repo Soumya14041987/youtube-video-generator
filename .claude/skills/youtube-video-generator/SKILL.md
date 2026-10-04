@@ -229,6 +229,14 @@ For each image search term from step 7:
 
 These become candidate overlay/background assets for the asset builder.
 
+### 8b. Coverage map (before writing the script)
+
+A shorter video is fine. A topic that is only half covered is not. Before writing:
+1. From the research brief and the fact sheet, list everything a viewer needs to understand the topic from start to finish (definitions, how it works, how it fails, security or safety, what changed recently, a worked example, a check question).
+2. Save it as `coverage.json` in the episode folder: `{"topic": "...", "must_cover": [{"item": "...", "keywords": ["...", "..."]}]}` (keywords are words the script will say; add `"all": true` to require every keyword).
+3. Write the script so every item is spoken, and run `python3 tools/dual_host/check_coverage.py episodes/<folder>`. `make_metadata.py` also fails the upload check if an item is missing.
+4. If covering everything does not fit the `Episode Max Minutes` limit, do not delete items. Split the topic into Part 1 and Part 2 (two episode folders, each with its own `coverage.json`), say at the end of Part 1 what Part 2 covers, and put both in the same playlist. Merge small items into one slide before splitting.
+
 ### 9. Synthesize Script — Scripting Gate
 
 Before writing, ask two scripting direction questions:
@@ -264,15 +272,15 @@ Fixed structure:
    fact, or bold claim the viewer feels compelled to resolve. The hook title
    must also double as the clickable video title — reframe the topic as a
    mystery or a revelation, not a description.
-   Bad: "MCP Server Architecture Explained"
-   Good: "Why Your AI Keeps Forgetting Everything (MCP Fixes This)"
+   Bad: "Database Indexing Explained"
+   Good: "Why Your Database Slows Down at 10,000 Rows (And the One Fix)"
 2. **Core concept** (plain English, concrete examples, visual-dense)
 3. **Twist** — the mind-blowing reframe or reveal promised by the hook.
    Lands in the final third before the CTA. One specific insight that changes
    how the viewer thinks about the topic. Not a summary — a perspective shift.
-   Example: "So MCP isn't about making AI smarter. It's about giving it
-   a nervous system. That's the difference between a brain in a jar and
-   one that can actually act in the world."
+   Example: "So an index isn't about making the database faster. It's about
+   not reading what you don't need. That's the difference between searching
+   a whole library and walking to the right shelf."
 4. **CTA** (dark-themed end-card, all 5 platforms, exact tag format per
    youtube-episode step 4) — no generic "like and subscribe" lines.
    The closing line before the CTA must be memorable and standalone,
@@ -408,7 +416,7 @@ AskUserQuestion (2 questions):
 ```
 
 Single-narrator episodes: voice is always male English, no non-English languages.
-Dual-host episodes (MCP Zero to Hero series and any conversational episode): see the Dual-Host Mode section below. It overrides this rule and uses one male and one female voice.
+Dual-host episodes (any conversational two-host episode): see the Dual-Host Mode section below. It overrides this rule and uses one male and one female voice.
 Map pace choice to atempo value: calm=0.82, slow=0.72, natural=0.90, fast=0.95.
 Map accent choice to Gemini voice name. Pass both to the TTS call below.
 
@@ -623,7 +631,7 @@ private upload, VidIQ scoring (stage V4 below) confirms the pick.
 Rewrite all 3 title options in metadata.md to match the winning thumbnail's
 angle. If thumbnail B (bold claim) won, all 3 title variants should carry
 that energy — benefit-driven, curiosity-driven, and outcome-specific.
-Descriptive titles ("MCP Server Architecture Explained") are not permitted
+Descriptive titles ("Database Indexing Explained") are not permitted
 as any of the 3 options at this point.
 
 CTR title rules:
@@ -635,9 +643,9 @@ CTR title rules:
 
 Thumbnail is already finalized in Step 13b. The upload package is built by `tools/dual_host/make_metadata.py`, not typed by hand, so every episode gets the same exact layout and the same checks.
 
-1. Write `upload-brief.json` in the episode folder. It holds only the episode-specific words: `titles` (3, best first), `target_keyword` (from VidIQ stage V1), `hook` (two lines carrying the keyword and the promise), `summary`, optional `hindi_summary` (marked as an English-language video), `learn` bullets, `chapter_titles` (one per chapter), `sources`, `next_episode`, `series_blurb`, `channel_blurb`, `quiz_cta`, `hashtags` (3 to 5), `tags`, `pinned_comment` (use `{reveal}` for the answer time), `evidence` (the VidIQ numbers), `short_window_slides`, `series_number` (published order, see channel-config.md).
-2. Run `python3 tools/dual_host/make_metadata.py episodes/<folder>`. It reads the real chapter times from `cue-sheet.json`, the follow links and subscribe link from `channel-config.md`, and writes `metadata.md` and `upload-check.md`.
-3. The description always follows the standard layout in `channel-config.md`: hook, summary, optional Hindi summary, what you will learn, chapters, sources, next episode, series blurb, about the channel, subscribe link, follow block, quiz ask, hashtags last.
+1. Write `upload-brief.json` in the episode folder. It holds only the episode-specific words: `titles` (3, best first), `target_keyword` (from VidIQ stage V1), `hook` (two lines carrying the keyword and the promise), `summary`, `learn` bullets, `chapter_titles` (one per chapter), `sources`, `next_episode`, `series_blurb`, `channel_blurb`, `quiz_cta`, `quiz` (question, four options, correct letter, explanation, for the Education Problems field), `hashtags` (3 to 5), `tags`, `pinned_comment` (use `{reveal}` for the answer time), `evidence` (the VidIQ numbers), `short_window_slides`, `series_number` (published order, see channel-config.md).
+2. Run `python3 tools/dual_host/make_metadata.py episodes/<folder>`. It reads the real chapter times from `cue-sheet.json`, the follow links and subscribe link from `channel-config.md`, and writes `metadata.md`, `upload-check.md`, `description.txt` (the exact description to paste) and `upload-guide.md` (a step by step YouTube Studio guide with the text to paste). Descriptions are English only; never add a Hindi or other translated summary.
+3. The description always follows the standard layout in `channel-config.md`: hook, summary, what you will learn, chapters, sources, next episode, series blurb, about the channel, subscribe link, follow block, quiz ask, hashtags last.
 4. VidIQ-based title choice (credits permitting): call `vidiq_generate_titles` once (5 credits) with `competitorTitles` taken from the V2 outlier results, then keep the highest scored titles that also pass the keyword rule. If credits are low, call `vidiq_score_title` once on the recommended title instead. Record the scores in `evidence`.
 5. Publish slot, upload settings, the Short plan and the after-upload steps come from the generator. Do not hand-write them.
 
@@ -706,7 +714,7 @@ is rejected. Replace with generated visual or different web source.
 
 ---
 
-## VidIQ Growth Stages (MCP Zero to Hero and any episode)
+## VidIQ Growth Stages
 
 Goal of every video: maximum views, likes and new subscribers. These stages use
 the VidIQ connector (tools named `mcp__...vidiq_*`). They are added around the
@@ -723,9 +731,9 @@ thumbnail score 5, publish update 5, shorts 9 per minute of source, music 25.
 Keyword research cost is not listed, so check the balance before and after the
 first run and note it here. Typical episode: about 35 credits.
 
-V1. Keyword research for India (before Step 7, research)
+V1. Keyword research for your target country (before Step 7, research)
 - Call `vidiq_keyword_research` with mode country_search, keyword the episode
-  topic, country IN, limit 10.
+  topic, country = `Target Country` from channel-config.md (an ISO code such as IN or US; default US), limit 10.
 - Also call it with mode questions, language en, to find the questions viewers type.
 - Keep the keyword with the highest country volume and the lowest competition as
   TOP_KEYWORD. Keep 3 to 5 question keywords for the description and the quiz.
@@ -757,8 +765,7 @@ V5. Publish metadata (only after the user approves the exact values)
 - Call `vidiq_user_channels` for the channel ID. Show the user the exact title,
   description, tags and publish time. Only after they approve, call
   `vidiq_update_video` with privacyStatus private and publishAt set to the next
-  slot (Tuesday or Thursday, 9:00 AM India time = 03:30 UTC unless
-  `channel-config.md` says otherwise). Cost 5 credits. Never publish without approval.
+  slot (the `Publish slot` in `channel-config.md`; convert it to UTC for the call). Cost 5 credits. Never publish without approval.
 
 V6. Shorts (free, local, built from the finished episode; do it right after the episode is built)
 - Vertical 1080 by 1920 clips come from `tools/dual_host/make_short.py`. They use the real audio and cue sheet, so sync is exact. No credits are spent.
@@ -773,6 +780,18 @@ V7. Music bed (one-time, reused by every episode)
   automatically at low volume and dips it under speech. Do not generate a new
   track per episode. Delete the file to build an episode with no music.
 
+V8. Packaging and retention review (runs before every upload, and as a monthly audit of old videos)
+A common pattern on small channels, worth checking in your own analytics: little traffic from YouTube search, most views from the creator's own shares, viewers leaving in the first minute whatever the video length, and average view percentage falling as length rises. When that is true, the first minute and the packaging decide almost everything. Check this with `vidiq_channel_analytics` (traffic_sources and averageViewPercentage) before relying on it. Rules:
+1. Title: VidIQ title score of 85 or more (`vidiq_score_title`, 5 credits each, score at most three), keyword in the first 3 words, no jargon like MCQ.
+2. Thumbnail: score 70 or more. VidIQ cannot score a private video; set it Unlisted or pass an image URL. The usual fixes it asks for are more energy (bright colours, big short text), a cleaner background and a sense of timeliness (a NEW or year badge).
+3. First 8 seconds: the real content starts within 8 seconds. Use `Intro Style: short` in channel-config.md (a 3 second intro) or move the introduction after the hook. `make_metadata.py` warns if it is later.
+4. First 90 seconds: one short, friendly ask, such as "comment your answer to the quiz at the end", because most viewers leave before the closing ask. `make_metadata.py` warns if it is missing.
+5. Length: let the content decide. On a small channel, a 4 to 6 minute video that people finish beats a stretched 9 minute one. Do not pad.
+6. Tags box: real search tags (8 or more), never hashtags. Hashtags go on the last line of the description.
+7. Description: first two lines carry the keyword and the promise. Do not promise a schedule you cannot keep ("new episodes every week").
+8. After upload, check the Studio Reach tab by hand (impressions and click-through rate are not available through VidIQ). If click-through is under about 4 percent after 1,000 impressions, change the thumbnail first, then the title. Change one thing at a time and wait.
+Monthly audit steps (about 40 to 60 credits): `vidiq_user_videos`, per-video `vidiq_channel_analytics` (views, engagedViews, averageViewPercentage, averageViewDuration, subscribersGained), `traffic_sources`, one retention curve for the best and the worst video, `vidiq_score_title` and `vidiq_score_thumbnail` for the lowest performers. Write the findings to `episodes/channel-review-<date>.md` and propose changes. Never update a live video (`vidiq_update_video`, `vidiq_update_video_thumbnail`) without the user's explicit approval for that video, and say what it costs.
+
 Growth rules for the script and upload
 1. The hook states the payoff in the first 15 seconds and uses TOP_KEYWORD.
 2. Ask for one like right after a value moment (the quiz answer), and ask to
@@ -785,7 +804,7 @@ Growth rules for the script and upload
 
 ## Dual-Host Mode (default)
 
-Two voices share every episode. By default they are Alex (male, OpenAI voice ash) and Elena (female, OpenAI voice coral); change the names, voices and style in `channel-config.md` (`Host 1 Name`, `Host 1 Voice`, `Host 1 Style`, and the same for host 2). Voices come from the OpenAI speech model gpt-4o-mini-tts because the Gemini free tier caps speech at 10 requests per day. Gemini stays available with `--tts gemini` once billing is on.
+Two voices share every episode. By default they are Alex (male, OpenAI voice ash) and Elena (female, OpenAI voice coral); change the names, voices and style in `channel-config.md` (`Host 1 Name`, `Host 1 Voice`, `Host 1 Style`, and the same for host 2). The voice provider is set by `TTS Provider` in channel-config.md (`openai` or `gemini`; `--tts` overrides it for one run). OpenAI uses gpt-4o-mini-tts. Gemini (voices Fenrir and Kore by default) is capped at about 10 requests a day unless the API key belongs to a Google project with billing linked, so confirm the key is from the billed project before a full build. Never mix providers inside one episode: each episode uses one provider for every line.
 
 How to run it, in order:
 
@@ -807,7 +826,7 @@ Hard rules. Every episode must follow all of them:
 4. Speaking speed is standard: about 150 words per minute, neither slow nor fast. The builder measures each generated line and adjusts its tempo to reach the target, so both voices match. Never fix pace with a single fixed tempo number.
 5. Nothing about the hosts is shown on screen. No portraits, no name tags, no "Speaking" labels, no "Hosts" strip. Slides fill the whole frame. 
 6. Slides must not show time ranges, slide timestamps, or a bottom series-name strip. Only the title card badge and the end screen may carry the series name.
-7. Timing comes from real audio lengths, never from word counts. The builder adds the exact length of every generated line plus fixed gaps, builds each slide clip frame-exact, and then runs a Whisper check that stops the build if any line drifts more than one second.
+7. Timing comes from real audio lengths, never from word counts. The builder adds the exact length of every generated line plus fixed gaps, builds each slide clip frame-exact, and then runs a Whisper check that stops the build if any line drifts more than 1.5 seconds. The countdown ticks are silenced for this check so they are not mistaken for speech.
 8. Exact words: every line is transcribed on its own by Whisper and compared with the script. Any line below 85 percent match is regenerated automatically, up to three times, before the build continues.
 9. The slide changes 0.3 seconds before the first line of that slide starts.
 10. Speech requests run four at a time. A full episode takes a few minutes and costs a few cents. Never print API keys.
@@ -839,14 +858,13 @@ Requirements: Higgsfield credits + user photo.
 
 **Path B — Local PIL avatar (immediate, no credits needed)**
 Use when no Higgsfield credits available OR no user photo supplied.
-1. Generate `soumya-avatar.png` using PIL: 280×320 RGBA, circular portrait with
-   green ring border, illustrative South Asian male face, name badge.
-   Script: see `make_soumya_avatar.py` pattern in session scratchpad.
+1. Generate `presenter-avatar.png` using PIL: 280×320 RGBA, circular portrait with
+   a ring border and a name badge, using the `Presenter` name from channel-config.md.
 2. Overlay onto episode.mp4 via ffmpeg:
    ```bash
-   ffmpeg -y -i episode.mp4 -i soumya-avatar.png \
+   ffmpeg -y -i episode.mp4 -i presenter-avatar.png \
      -filter_complex "[1:v]scale=200:-1[av];[0:v][av]overlay=W-w-18:H-h-18:format=auto" \
-     -c:a copy -c:v libx264 -crf 22 -preset fast episode_with_soumya.mp4
+     -c:a copy -c:v libx264 -crf 22 -preset fast episode_with_presenter.mp4
    ```
 3. Scale: 200px wide. Position: 18px from right and bottom edges.
 4. Keep original audio (voiceover.wav already composited). PIL avatar is static.
@@ -866,11 +884,11 @@ Script writers must follow these rules to ensure tight visual-narration sync:
    sub-concepts, use 3 separate `[VISUAL:]` tags within it.
 2. **Tag placement = where the visual should appear**. Place the `[VISUAL:]`
    tag on the line immediately before the narration sentence that references it.
-3. **Example visuals must match the example**. If narration says "a GitHub MCP
-   server wraps GitHub's GraphQL API", the visual must show exactly that
-   (not a generic MCP diagram).
-4. **Comparison visuals appear at comparison start**. "stdio vs Streamable HTTP"
-   visual tag goes before "Two transport types" sentence, not after.
+3. **Example visuals must match the example**. If narration says "a payments
+   service wraps a bank's REST API", the visual must show exactly that
+   (not a generic API diagram).
+4. **Comparison visuals appear at comparison start**. "REST vs GraphQL"
+   visual tag goes before "Two API styles" sentence, not after.
 5. **Animations are for sequences, not facts**. Use `[ANIMATION:]` only when
    something builds step-by-step over 4–15s. Don't animate a static comparison.
 

@@ -32,6 +32,9 @@ thumbnails and upload details. It works as a Claude Code plugin or as a project 
 - Use the published episode number from `channel-config.md`, not the folder number, on screen, in speech and in descriptions.
 - Links come only from `channel-config.md`. Never invent a link.
 - Episodes, `channel-config.md`, `.env`, `assets/presenter`, `assets/music` and series files are the creator's. They are ignored by git. Do not commit them.
+- Before committing, run `python3 scripts/check_private.py --staged` (the git hook does this when `git config core.hooksPath .githooks` is set). Never add a channel's own details (names, links, titles, ids) to a tracked file; use `channel-config.md` or the episode folders, which are ignored.
+- The skill and tools must stay generic: no creator, series or topic specifics in code or in the skill text. Series details come from `channel-config.md`.
+- A shorter video is fine, a half-covered topic is not: list what the episode must cover in `coverage.json` and run `python3 tools/dual_host/check_coverage.py episodes/<folder>`. If it does not fit the length limit, split it into parts.
 - Keep changes small and run the syntax check and `python3 scripts/doctor.py --ci` before finishing.
 
 ## Layout

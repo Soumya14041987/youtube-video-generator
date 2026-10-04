@@ -72,11 +72,17 @@ def check_fonts():
 
 def check_keys_and_secrets():
     if not CI:
+        prov = common.cfg("TTS Provider", "openai").split("#")[0].strip().lower()
         k = common.env_key("OPENAI_API_KEY", required=False)
-        add("PASS" if k else "FAIL", "OPENAI_API_KEY is set (value not shown)" if k else "OPENAI_API_KEY is not set",
-            "Copy .env.example to .env and add your key, or export it in your shell or IDE")
         g = common.env_key("GEMINI_API_KEY", required=False)
-        add("PASS" if g else "WARN", "GEMINI_API_KEY is set (optional, only for --tts gemini)" if g else "GEMINI_API_KEY not set (optional)")
+        need_o, need_g = prov != "gemini", prov == "gemini"
+        add("PASS" if k else ("FAIL" if need_o else "WARN"), f"OPENAI_API_KEY is set (value not shown)" if k else
+            f"OPENAI_API_KEY is not set" + ("" if need_o else " (optional, TTS Provider is gemini)"),
+            "Copy .env.example to .env and add your key, or export it in your shell or IDE")
+        add("PASS" if g else ("FAIL" if need_g else "WARN"), "GEMINI_API_KEY is set (value not shown)" if g else
+            "GEMINI_API_KEY is not set" + ("" if need_g else " (optional)"),
+            "Create a key in Google AI Studio inside the project that has billing, and add it to .env")
+        add("PASS", f"voice provider: {prov} (set 'TTS Provider: openai' or 'gemini' in channel-config.md)")
     git = shutil.which("git")
     if git and os.path.isdir(os.path.join(common.CODE_ROOT, ".git")):
         ignored = run(["git", "-C", common.CODE_ROOT, "check-ignore", "-q", ".env"]).returncode == 0
@@ -95,6 +101,17 @@ def check_keys_and_secrets():
                 pass
         add("PASS" if not hits else "FAIL", "no API keys found in files git would commit" if not hits else f"possible API key in: {', '.join(hits[:5])}",
             "Remove the key from that file and rotate it")
+
+
+def check_privacy():
+    if not os.path.isdir(os.path.join(common.CODE_ROOT, ".git")):
+        return
+    hp = run(["git", "-C", common.CODE_ROOT, "config", "core.hooksPath"]).stdout.strip()
+    add("PASS" if hp == ".githooks" else "WARN", "git hooks block private files and keys before commit and push" if hp == ".githooks"
+        else "git hooks are not switched on, so nothing stops a private file being committed", "git config core.hooksPath .githooks")
+    r = run([sys.executable, os.path.join(common.CODE_ROOT, "scripts", "check_private.py"), "--all"])
+    add("PASS" if r.returncode == 0 else "FAIL", "privacy check: no keys, private files or channel details in files git would publish" if r.returncode == 0
+        else "privacy check failed: " + " ".join(r.stdout.split("\n")[1:4]).strip(), "python3 scripts/check_private.py --all")
 
 
 def check_project():
@@ -129,7 +146,7 @@ def check_ides():
 def main():
     add("PASS", f"{platform.system()} {platform.release()}, code at {common.CODE_ROOT}")
     add("PASS", f"project folder: {common.PROJECT_ROOT}")
-    check_python(); check_packages(); check_ffmpeg(); check_fonts(); check_keys_and_secrets(); check_project(); check_ides()
+    check_python(); check_packages(); check_ffmpeg(); check_fonts(); check_keys_and_secrets(); check_privacy(); check_project(); check_ides()
     order = {"FAIL": 0, "WARN": 1, "PASS": 2}
     for level, text, fix in RESULTS:
         print(f"{level:5} {text}")

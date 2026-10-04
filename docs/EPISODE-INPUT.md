@@ -54,6 +54,10 @@ Your channel and series name live in `channel-config.md` (Series Name, Series Ba
 
 You can also do steps 5 and 6 by hand. That is useful if you write your own script.
 
+## Covering the whole topic
+
+Before the script, list what the episode must cover in `coverage.json` (see the top of `tools/dual_host/check_coverage.py`). After the script is written, run `python3 tools/dual_host/check_coverage.py episodes/<folder>`. The upload check fails if a required item is never spoken. If everything does not fit the length limit, split the topic into two parts instead of cutting items.
+
 ## The script file, dualhost.json
 
 ```json
@@ -86,7 +90,8 @@ Rules:
 - `speaker` must be the lowercase first host name from `channel-config.md` (default `alex` and `elena`).
 - Each slide needs a picture `visuals/<visual>` in the episode folder.
 - A slide whose title contains the word Exam becomes a quiz. The first line is read, a 40 second ticking countdown runs, then the second line gives the answer. It also needs a second picture named like the first with a `b`, for example `visual-02b.png`, which shows the answer in green.
-- The two hosts introduce themselves automatically. Do not add an intro.
+- The two hosts introduce themselves automatically. Do not add an intro. `Intro Style` in channel-config.md picks the short (about 3 seconds) or full version. To keep one episode different, add `"intro_style": "full"` or `"short"` at the top level of dualhost.json.
+- To make one episode an exception to the length rule in channel-config.md, add `"length_minutes": [7, 10]` at the top level of dualhost.json (and in upload-brief.json).
 - Keep each host's turn to about four sentences. Keep the whole episode inside your length rule.
 
 Build it:

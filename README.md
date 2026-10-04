@@ -17,6 +17,8 @@ For each episode, in `episodes/episode-NN-name/`:
 | `voiceover.wav` and `audio/lines/` | Narration, one recording per spoken line |
 | `cue-sheet.json`, `cue-sheet.md` | When every slide and sound happens, measured from the real audio |
 | `metadata.md` | Title, description, tags, hashtags, chapters, pinned comment, settings |
+| `description.txt` | The exact description, ready to paste (English only) |
+| `upload-guide.md` | Step by step YouTube Studio guide with the text to paste for every field |
 | `shorts/short-NN.mp4` | Optional vertical Shorts cut from the episode |
 | `upload-check.md` | A pass, warn or fail report so a broken upload package is caught before you upload |
 
@@ -133,6 +135,9 @@ Edit `channel-config.md`. Every value is optional except the subscribe link or c
 | `Channel ID` or `Subscribe link` | The subscribe link in every description |
 | `LinkedIn`, `Medium`, `X`, `GitHub`, `Instagram`, `Website`, `AWS Builder Center` | Follow links added to descriptions |
 | `Banned Links` | Words that must never appear in a description (catches wrong links) |
+| `TTS Provider` | `openai` or `gemini`, the voice service used for every episode |
+| `Target Country`, `Category` | Country for keyword research, and the YouTube category |
+| `Intro Style` | `short` (about 3 seconds) or `full` spoken introduction |
 | `Publish slot` | Suggested day and time |
 | `Presenter Look` | Describes the presenter for generated photos |
 
@@ -183,6 +188,8 @@ You pay your own providers. The main costs are OpenAI text-to-speech for the nar
 
 ## Safety
 
+- Nothing private is published. `.gitignore` keeps out `.env`, `channel-config.md`, `episodes/`, series logs, playlists, presenter photos and music. On top of that, git hooks in `.githooks/` run `scripts/check_private.py` before every commit and push. It blocks private files, anything that looks like a key, and any value copied from your own files (your keys, channel ID, links, handles and episode titles). Turn the hooks on once with `git config core.hooksPath .githooks`; `python3 scripts/doctor.py` tells you if they are off. CI runs the same check on GitHub.
+
 - API keys are read from the environment or `.env`, and are never printed, logged, or sent to sub-agents.
 - `.env`, `channel-config.md`, `episodes/`, your presenter photos and music, and other creator files are in `.gitignore`. `python3 scripts/doctor.py` fails if `.env` is not ignored or a key is found in a file git would commit.
 - Nothing is published for you. You upload the video. VidIQ updates to live videos happen only after you say yes.
@@ -193,7 +200,7 @@ You pay your own providers. The main costs are OpenAI text-to-speech for the nar
 - Sub-agents exist only in Claude Code. Other tools run the same steps in one agent.
 - The built-in photo cutout uses macOS 14 or newer. On Windows and Linux install `rembg` or cut the photo out yourself.
 - The Whisper `base` model is a one time download of roughly 140 MB.
-- Gemini voices are optional (`--tts gemini`) and the free tier is only about 10 requests a day.
+- Gemini voices are optional (`TTS Provider: gemini`). The free tier is only about 10 requests a day, so the API key must belong to a Google project with billing linked.
 - Kiro and Junie only read skills from their own folders, so run the installer once.
 - VidIQ credits are limited by your plan, and it cannot upload the video file.
 - Details for Windsurf and some other tools come from their public docs and may have changed. Check their docs if a step fails.

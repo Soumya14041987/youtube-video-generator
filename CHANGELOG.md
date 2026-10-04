@@ -3,6 +3,13 @@
 ## Unreleased
 
 Added
+- Privacy guard: `scripts/check_private.py`, git hooks in `.githooks/`, a CI step and a doctor check block private files, keys and anything copied from your own channel files.
+- Coverage check (`check_coverage.py`, `coverage.json`) so shortening a video never drops part of the topic.
+- `Target Country` and `Category` settings; the skill and tools no longer carry creator-specific text.
+- `TTS Provider` setting (openai or gemini) in channel-config.md, a clear message when a Gemini key is on the free tier, and a doctor check for the chosen provider's key.
+- Per-episode overrides in dualhost.json (`intro_style`, `length_minutes`) so older episodes keep their own rules when the channel rules change.
+- Growth checks in make_metadata.py (fast start, early ask, real search tags) and skill stage V8 with a monthly audit routine.
+- `description.txt` and `upload-guide.md` for every episode: the exact text to paste and a step by step YouTube Studio guide. Descriptions are English only (no translated summary).
 - Shorts mode: `make_short.py` cuts vertical 1080 by 1920 Shorts from an episode with hook banner, word by word captions and a follow line. Guide: docs/SHORTS.md.
 - `docs/EPISODE-INPUT.md`, example series files, builder input checks, typed-argument handling in the skill.
 

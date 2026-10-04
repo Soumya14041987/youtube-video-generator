@@ -28,6 +28,8 @@ jobs:
               json.load(open(f))
               print("ok", f)
           EOF
+      - name: No private files, keys or channel details are published
+        run: python scripts/check_private.py --all
       - name: Relative links in Markdown files
         run: python scripts/check_links.py
       - name: Thumbnail smoke test (no face, no keys)

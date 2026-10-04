@@ -22,6 +22,10 @@ Episode Min Minutes: 7
 Episode Max Minutes: 10
 Host 1 Name: Alex
 Host 2 Name: Elena
+Target Country: US    # two-letter code used for keyword research, for example IN, US, GB
+Category: Education
+TTS Provider: openai    # openai or gemini. gemini needs a key from a Google project with billing, or it is limited to about 10 lines a day
+Intro Style: short    # short = about 3 seconds so the content starts sooner. full = the longer spoken intro
 Presenter Look: the same person as in the reference image
 
 ## Follow Links (used in every description and on the end screen)

@@ -12,7 +12,7 @@ built by adding those real lengths (plus fixed gaps), never estimated. A Whisper
 
 Hosts, series name and the episode length rule come from channel-config.md (see channel-config.md.example).
 """
-import argparse, base64, difflib, concurrent.futures as cf, hashlib, json, os, re, subprocess, sys, tempfile, time, wave
+import argparse, base64, difflib, glob, concurrent.futures as cf, hashlib, json, os, re, subprocess, sys, tempfile, time, wave
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import CODE_ROOT as ROOT, cfg, cfg_float, data_path, env_key, find_font  # noqa: E402
@@ -26,21 +26,29 @@ _PACE = ("Natural, brisk conversational pace of about 150 words per minute with 
 VOICES = {"openai": {K1: cfg("Host 1 Voice", "ash"), K2: cfg("Host 2 Voice", "coral")},
           "gemini": {K1: cfg("Host 1 Gemini Voice", "Fenrir"), K2: cfg("Host 2 Gemini Voice", "Kore")}}
 STYLE = {
-    K1: cfg("Host 1 Style", f"Male host {H1}. Warm, confident Indian English accent. " + _PACE),
+    K1: cfg("Host 1 Style", f"Male host {H1}. Warm, confident English accent. " + _PACE),
     K2: cfg("Host 2 Style", f"Female host {H2}. Warm, articulate, neutral English accent. " + _PACE),
 }
 NAMES = {K1: H1, K2: H2}
 TARGET_WPM = 150
 TEMPO_LIMITS = (0.80, 1.35)
-INTRO = [
-    {"speaker": K1, "text": f"Hi everyone, I'm {H1}."},
-    {"speaker": K2, "text": f"And I'm {H2}. We are your hosts for the {SERIES} series, and today we will explain one concept at a time."},
-]
+def make_intro(style):
+    """Spoken introduction. short is about 3 seconds so the real content starts sooner; full is the longer version."""
+    if style == "short":
+        return [{"speaker": K1, "text": f"Hi, I'm {H1}."}, {"speaker": K2, "text": f"And I'm {H2}."}]
+    return [
+        {"speaker": K1, "text": f"Hi everyone, I'm {H1}."},
+        {"speaker": K2, "text": f"And I'm {H2}. We are your hosts for the {SERIES} series, and today we will explain one concept at a time."},
+    ]
+
+
+INTRO_STYLE = cfg("Intro Style", "full").split("#")[0].strip().lower()
 TURN_GAP, SLIDE_GAP, LEAD_IN, TAIL = 0.35, 0.60, 0.30, 1.5
 MIN_SECONDS = int(cfg_float("Episode Min Minutes", 0) * 60)  # 0 means no minimum
 MAX_SECONDS = int(cfg_float("Episode Max Minutes", 0) * 60)  # 0 means no maximum
 MUSIC_BED = data_path("assets", "music", "bed.mp3")
 MUSIC_GAIN = 0.11
+SYNC_TOLERANCE = 1.5  # seconds. Whisper can start a word up to about a second early after a pause; a real mis-build drifts far more
 THINK_PAUSE = 40  # seconds of countdown with ticking sound while viewers answer the quiz
 TTS_MODEL = "gemini-2.5-flash-preview-tts"
 
@@ -152,7 +160,11 @@ def tts_gemini(text, speaker, out_wav, key):
                 break
             except Exception:
                 if "PerDay" in r.stdout:
-                    raise SystemExit("Gemini TTS daily quota exhausted (free tier: 10 requests per day).")
+                    if "FreeTier" in r.stdout:
+                        raise SystemExit("Gemini TTS stopped: this API key's project is on the FREE tier (about 10 requests a day), so your prepaid credit is not being used. "
+                                         "In Google AI Studio, open API Keys and use a key that belongs to the project linked to your billing account "
+                                         "(or link billing to this key's project), then put the key in .env as GEMINI_API_KEY.")
+                    raise SystemExit("Gemini TTS daily quota exhausted for this project.")
                 m = re.search(r"retry in ([\d.]+)s", r.stdout)
                 time.sleep(float(m.group(1)) + 3 if m else 8 + 4 * attempt)
         else:
@@ -167,7 +179,10 @@ def tts_gemini(text, speaker, out_wav, key):
 
 def line_wav(d, n, i, ln):
     sig = str(TARGET_WPM) + PROVIDER + VOICES[PROVIDER][ln["speaker"]] + STYLE[ln["speaker"]] + ln["text"]
-    return os.path.join(d, f"s{n:02d}_{i+1}_{ln['speaker']}_{hashlib.md5(sig.encode()).hexdigest()[:8]}.wav")
+    h = hashlib.md5(sig.encode()).hexdigest()[:8]
+    # reuse a recording of the same words and voice even if the slide moved, so reordering never costs credits
+    found = [f for f in glob.glob(os.path.join(d, f"*_{ln['speaker']}_{h}.wav")) if not f.endswith(".raw.wav")]
+    return found[0] if found else os.path.join(d, f"s{n:02d}_{i+1}_{ln['speaker']}_{h}.wav")
 
 
 def step_tts(ep_dir, script):
@@ -301,7 +316,20 @@ def step_verify(ep_dir, cue):
         model = whisper.load_model("base")
     except Exception as e:
         print("verify skipped:", str(e)[:120]); return
-    res = model.transcribe(os.path.join(ep_dir, "voiceover.wav"), word_timestamps=True, verbose=False)
+    # Whisper can mistake the countdown ticks for speech, so check a copy with the countdown silenced.
+    src = os.path.join(ep_dir, "voiceover.wav")
+    with wave.open(src) as w:
+        sr, raw = w.getframerate(), bytearray(w.readframes(w.getnframes()))
+    q = cue.get("quiz")
+    if q:
+        lo, hi = int(q["countdown_start"] * sr) * 2, int((q["reveal_at"] - 0.1) * sr) * 2
+        raw[lo:hi] = bytes(hi - lo)
+    chk = os.path.join(ep_dir, "voiceover_verify.wav")
+    with wave.open(chk, "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes(bytes(raw))
+    res = model.transcribe(chk, word_timestamps=True, verbose=False)
+    os.remove(chk)
+
     norm = lambda x: re.sub(r"[^\w]", "", x).lower()
     words = [(norm(w["word"]), w["start"]) for seg in res["segments"] for w in seg.get("words", [])]
     worst = 0.0
@@ -309,19 +337,20 @@ def step_verify(ep_dir, cue):
     for l in cue["lines"]:
         probe = [norm(x) for x in l["text"].split()[:4]]
         best = None
-        for i in range(len(words) - 3):
+        n = len(probe)  # short lines such as "And I'm Elena." have fewer than 4 words
+        for i in range(len(words) - n + 1):
             if abs(words[i][1] - l["start"]) >= 5:
                 continue
-            score = sum(similar(words[i + j][0], probe[j]) for j in range(4))
+            score = sum(similar(words[i + j][0], probe[j]) for j in range(n))
             key = (-score, abs(words[i][1] - l["start"]))
-            if score >= 3 and (best is None or key < best[0]):
+            if score >= min(3, n) and (best is None or key < best[0]):
                 best = (key, words[i][1])
         if best is None:
             print(f"  warn: slide {l['slide']} {l['speaker']} start not matched by Whisper"); continue
         worst = max(worst, abs(best[1] - l["start"]))
     print(f"verify: worst timing drift = {worst:.2f}s")
-    if worst > 1.0:
-        sys.exit("SYNC CHECK FAILED: drift over 1.0s")
+    if worst > SYNC_TOLERANCE:
+        sys.exit(f"SYNC CHECK FAILED: drift over {SYNC_TOLERANCE}s")
 
 
 # ---------------------------------------------------------------- render
@@ -395,11 +424,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("episode_dir"); ap.add_argument("--bible"); ap.add_argument("--ep", type=int)
     ap.add_argument("--steps", default="parse,tts,timeline,verify,render")
-    ap.add_argument("--tts", default="openai", choices=["openai", "gemini"])
+    ap.add_argument("--tts", default=None, choices=["openai", "gemini"], help="voice provider; default is 'TTS Provider' in channel-config.md, else openai")
     ap.add_argument("--out", default="episode.mp4")
     a = ap.parse_args()
     global PROVIDER
-    PROVIDER = a.tts
+    PROVIDER = a.tts or cfg("TTS Provider", "openai").split("#")[0].strip().lower()
+    if PROVIDER not in ("openai", "gemini"):
+        sys.exit(f"TTS Provider must be openai or gemini, not '{PROVIDER}'")
     ep_dir, steps = os.path.abspath(a.episode_dir), a.steps.split(",")
     sj = os.path.join(ep_dir, "dualhost.json")
     if "parse" in steps and a.bible:
@@ -407,10 +438,13 @@ def main():
     if not os.path.exists(sj):
         sys.exit(f"{sj} not found. Write it first (see docs/EPISODE-INPUT.md), or pass --bible <file> --ep N to parse a script file.")
     script = json.load(open(sj))
+    if script.get("length_minutes"):  # per-episode exception to the length rule in channel-config.md
+        global MIN_SECONDS, MAX_SECONDS
+        MIN_SECONDS, MAX_SECONDS = int(script["length_minutes"][0] * 60), int(script["length_minutes"][1] * 60)
     apply_quiz_defaults(script)
     first = script["slides"][0]["lines"]
     if not first or f"I'm {H1}" not in first[0]["text"]:
-        first[0:0] = [dict(x) for x in INTRO]
+        first[0:0] = [dict(x) for x in make_intro(script.get("intro_style", INTRO_STYLE))]
     if any(x in steps for x in ("tts", "timeline", "render")):
         check_inputs(ep_dir, script)
     if "tts" in steps:
