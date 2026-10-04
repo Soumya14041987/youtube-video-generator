@@ -114,6 +114,14 @@ def check_privacy():
         else "privacy check failed: " + " ".join(r.stdout.split("\n")[1:4]).strip(), "python3 scripts/check_private.py --all")
 
 
+def check_codex_package():
+    if not os.path.isdir(os.path.join(common.CODE_ROOT, ".codex-marketplace")):
+        return
+    r = run([sys.executable, os.path.join(common.CODE_ROOT, "scripts", "sync_codex_package.py"), "--check"])
+    add("PASS" if r.returncode == 0 else "WARN", "Codex plugin package matches the skills" if r.returncode == 0
+        else "Codex plugin package is out of date", "python3 scripts/sync_codex_package.py")
+
+
 def check_project():
     if CI:
         return
@@ -146,7 +154,7 @@ def check_ides():
 def main():
     add("PASS", f"{platform.system()} {platform.release()}, code at {common.CODE_ROOT}")
     add("PASS", f"project folder: {common.PROJECT_ROOT}")
-    check_python(); check_packages(); check_ffmpeg(); check_fonts(); check_keys_and_secrets(); check_privacy(); check_project(); check_ides()
+    check_python(); check_packages(); check_ffmpeg(); check_fonts(); check_keys_and_secrets(); check_privacy(); check_codex_package(); check_project(); check_ides()
     order = {"FAIL": 0, "WARN": 1, "PASS": 2}
     for level, text, fix in RESULTS:
         print(f"{level:5} {text}")

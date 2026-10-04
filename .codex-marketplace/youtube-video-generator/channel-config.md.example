@@ -1,0 +1,67 @@
+# Channel Configuration
+
+Copy this file to channel-config.md and fill in your own values.
+The tools read lines written as "Key: value". Keys are not case sensitive.
+channel-config.md is ignored by git, so your details stay on your computer.
+
+---
+
+## Channel Identity
+
+Channel Name: Your Channel Name
+Channel ID: UCxxxxxxxxxxxxxxxxxxxxxx
+Channel Tagline: Your short tagline or series name
+Presenter: Your Full Name
+Follow Name: Your first name
+
+## Series Settings
+
+Series Name: Your Series Name
+Series Badge: YOUR SERIES NAME
+Episode Min Minutes: 7
+Episode Max Minutes: 10
+Host 1 Name: Alex
+Host 2 Name: Elena
+Target Country: US    # two-letter code used for keyword research, for example IN, US, GB
+Category: Education
+TTS Provider: openai    # openai or gemini. gemini needs a key from a Google project with billing, or it is limited to about 10 lines a day
+Intro Style: short
+Presenter Photo:    # optional. A transparent PNG cutout of you, for example assets/presenter/real/me.png (see docs/THUMBNAILS.md)
+Presenter Photo Flip: false    # true mirrors the photo so you look toward the headline on the left
+Presenter Photo Scale: 0.9
+Presenter Photo Top: -45
+Presenter Photo Face X: 950    # short = about 3 seconds so the content starts sooner. full = the longer spoken intro
+Presenter Look: the same person as in the reference image
+
+## Follow Links (used in every description and on the end screen)
+
+LinkedIn: https://www.linkedin.com/in/your-handle
+Medium: https://medium.com/@your-handle
+X: https://x.com/your-handle
+Subscribe link: https://www.youtube.com/channel/UCxxxxxxxxxxxxxxxxxxxxxx?sub_confirmation=1
+
+## Publish Schedule
+
+Publish slot: Tuesday or Thursday, 9:00 AM your local time
+Short beginner content: Tuesday / Thursday / Saturday / Sunday, 8 to 9 PM your local time
+Long advanced content: Saturday, 9 to 10 AM your local time
+
+## Links to Never Use (optional, comma separated)
+
+Banned Links: old-handle, wrong-link-fragment
+
+## Episode Numbering
+
+Viewers see the published order (Episode 1, 2, 3 ...), not your folder numbers. Keep a note of the mapping here,
+for example: file EP01 = Episode 1, file EP03 = Episode 2.
+
+## Standard Description Layout
+
+1. Hook: two lines with the main search phrase and the promise
+2. Short summary paragraph
+3. Optional summary in a second language
+4. What you will learn
+5. Chapters
+6. Sources, next episode, series blurb
+7. About the channel, subscribe link, follow block
+8. Hashtags last, never more than 15

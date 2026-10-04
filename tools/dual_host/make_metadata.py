@@ -341,7 +341,8 @@ Check: the chapters list starts with 0:00 and the hashtags are on the last line.
 
 ## Step 4. Thumbnail, playlist and audience
 
-1. Thumbnail: click Upload file and choose thumbnail-final.png. If Studio asks you to verify your phone number first, do that and try again.
+1. Thumbnail: click Upload file and choose thumbnail-final.png (version A, the one with your face and 3 to 4 big words). If Studio asks you to verify your phone number first, do that and try again.
+   Thumbnail test: version B (thumbnails/thumb-b.png) shows only the topic and a diagram, no face. If your channel has Test and compare, add both versions there. It splits impressions between them and shows which gets more clicks. Wait for roughly 1,000 impressions on each version before deciding, because below that the difference is mostly noise. Keep the winning style for the next 3 episodes, then test again.
 2. Playlist: click Select, tick {SERIES}. If it does not exist, click New playlist, create it, and tick it.
 3. Audience: choose No, it is not made for kids.
 4. Altered content question: Studio asks if the video has realistic altered or synthetic content. The narration uses AI voices that are not a real person's voice, and the slides are diagrams. Read the Learn more text in that box and answer honestly. Many channels in this position answer No, but the rule is YouTube's, so check it.
@@ -388,6 +389,7 @@ Click Next. Wait for the copyright check to finish. It should say no issues foun
 ```
 
 3. Reply to every comment in the first hour. Early replies help the video.
+   Thumbnail test result: when each version has about 1,000 impressions, read the result in Studio. Do not switch earlier.
 4. Shorts: post one Short a day or two after the video. They are in the shorts folder. Each has a .md file with its own title and description. Paste the full video link into the Short description.
 5. After 10 to 14 days, look at click-through rate and average view percentage in Studio, Analytics. Change nothing before then.
 """

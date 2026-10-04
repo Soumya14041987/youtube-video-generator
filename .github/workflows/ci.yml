@@ -30,6 +30,8 @@ jobs:
           EOF
       - name: No private files, keys or channel details are published
         run: python scripts/check_private.py --all
+      - name: Codex package is up to date
+        run: python scripts/sync_codex_package.py --check
       - name: Relative links in Markdown files
         run: python scripts/check_links.py
       - name: Thumbnail smoke test (no face, no keys)

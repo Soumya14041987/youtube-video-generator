@@ -25,7 +25,12 @@ Host 2 Name: Elena
 Target Country: US    # two-letter code used for keyword research, for example IN, US, GB
 Category: Education
 TTS Provider: openai    # openai or gemini. gemini needs a key from a Google project with billing, or it is limited to about 10 lines a day
-Intro Style: short    # short = about 3 seconds so the content starts sooner. full = the longer spoken intro
+Intro Style: short
+Presenter Photo:    # optional. A transparent PNG cutout of you, for example assets/presenter/real/me.png (see docs/THUMBNAILS.md)
+Presenter Photo Flip: false    # true mirrors the photo so you look toward the headline on the left
+Presenter Photo Scale: 0.9
+Presenter Photo Top: -45
+Presenter Photo Face X: 950    # short = about 3 seconds so the content starts sooner. full = the longer spoken intro
 Presenter Look: the same person as in the reference image
 
 ## Follow Links (used in every description and on the end screen)

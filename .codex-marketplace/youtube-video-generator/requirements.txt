@@ -1,0 +1,12 @@
+# Python packages for the toolkit. Install with:  pip install -r requirements.txt
+# Tested with Python 3.14. Python 3.10 or newer is recommended.
+
+# Draws thumbnails and slides (required)
+Pillow>=10.1
+
+# Checks that every voice line matches the script and that slide changes line up with the audio.
+# Large download (it installs PyTorch). Without it the build still works, but the sync and wording checks are skipped.
+openai-whisper>=20240930
+
+# Optional: cut a person out of a photo on Windows or Linux (macOS uses the built-in Apple tool instead)
+# rembg

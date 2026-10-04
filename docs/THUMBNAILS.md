@@ -35,6 +35,7 @@ This writes `thumbnails/thumb-a.png`, `thumbnails/thumb-b.png` and copies option
 | `shot` | `thinking`, `skeptical`, `finger`, `curious` (files in `assets/presenter/`), `photo:<path to a transparent PNG>`, or `none` |
 | `lines` | Headline lines as `[text, size, color]`. Colors: YELLOW GREEN WHITE RED BLUE ORANGE |
 | `banner`, `banner_size` | The red banner under the headline |
+| `photo_scale`, `photo_top`, `face_x` | For a `photo:` shot: size, vertical offset and horizontal face position (defaults 1.15, -6, 960). Try 0.9, -45, 950 for a head-and-shoulders photo |
 | `max_w` | Widest the headline may be. Keep it left of the face (about 590 to 640) |
 | `icons` | Optional row of `[icon, label]`. Icons: wrench folder bulb search memo globe lock gear rocket check |
 | `panels` | Optional layout with a title and colored panels: `{"title": [...], "items": [["MODEL", "wrench", "BLUE"]]}` |
@@ -53,6 +54,14 @@ Use only faces you have the right to use.
 2. **Generate presenter shots from a reference photo.** `python3 tools/dual_host/gen_presenter.py reference.jpg` makes four shots
    (thinking, skeptical, finger, curious) in `assets/presenter/`. It uses the OpenAI image API, so it costs money. Describe the person in `Presenter Look:` in `channel-config.md`.
 3. **Draw your own** four 1280 by 720 PNGs with the person on the right and plain dark navy on the left, and save them in `assets/presenter/`.
+
+## Save your photo once, reuse it for every episode
+
+Set `Presenter Photo` (a transparent PNG cutout) in `channel-config.md`, plus `Presenter Photo Flip: true` if you want to look toward the headline, and the scale, top and face position that look right. Then every thumbnail spec just says `"shot": "presenter"` and only the words change. Per-episode keys in the spec still override the saved settings.
+
+## Make the test mean something
+
+Make version A with your face and 3 to 4 big words, and version B with only the topic and a diagram (`"shot": "none"`). Use YouTube Studio's Test and compare if your channel has it. Wait for roughly 1,000 impressions on each version before deciding, keep the winning style for the next 3 episodes, then test again.
 
 ## Before you publish
 

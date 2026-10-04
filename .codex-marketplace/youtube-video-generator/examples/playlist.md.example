@@ -1,0 +1,9 @@
+# Playlist: My Series Name
+
+Ordered list of episodes. Say "next in My Series Name" and the assistant picks the first row whose Status is Planned.
+
+| # | Title | Format | Audience Level | Focus | Status | Episode |
+|---|---|---|---|---|---|---|
+| 1 | What Is MCP? | Long | Beginner | The problem it solves, in plain words | Produced | `episodes/episode-01-what-is-mcp/` |
+| 2 | Build Your First MCP Server | Long | Intermediate | Connect, discover, call a tool | Planned | - |
+| 3 | MCP Security Basics | Long | Advanced | Authorization and common mistakes | Planned | - |

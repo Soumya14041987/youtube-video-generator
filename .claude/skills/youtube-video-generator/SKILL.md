@@ -8,7 +8,8 @@ description: Master orchestrator for YouTube video production. Accepts structure
 
 **Toolkit root and project folder.** Paths like `tools/dual_host/...` and `scripts/...` below are relative to the toolkit root.
 When this skill runs from a Claude Code plugin install, the toolkit root is `${CLAUDE_PLUGIN_ROOT}`. When the repo is cloned into your
-project, it is the project folder. Your own files (`.env`, `channel-config.md`, `assets/`, `episodes/`) always live in the project
+project, it is the project folder. In every other layout (Codex plugin, Hermes, OpenClaw, `npx skills add`), the toolkit root is the nearest
+folder above this SKILL.md that contains `tools/dual_host/` and `scripts/doctor.py`. Your own files (`.env`, `channel-config.md`, `assets/`, `episodes/`) always live in the project
 folder, which is where you start the session. Run `python3 scripts/doctor.py` once to check the setup. In a plugin install the
 sub-agent names carry a prefix, for example `youtube-video-generator:youtube-researcher`; use the prefixed name when spawning them.
 
@@ -612,6 +613,8 @@ Mandatory thumbnail spec (pass explicitly to asset builder):
 Image models misspell text, clip it at the edges, and sometimes change letters (Episode 4 once came back as "N x 1" instead of "N x M"). So the model draws only the presenter, and the code draws everything else:
 - Presenter shots live in `assets/presenter/` (thinking, skeptical, finger, curious). Make new ones with `tools/dual_host/gen_presenter.py`. They are reusable across every episode, so a normal episode costs nothing for the photo.
 - `tools/dual_host/compose_thumbnails.py` draws the headline (Impact font), the red banner, icons and the series badge (from `Series Badge` in `channel-config.md`) with the episode number inside safe margins. For a new episode write `thumbnail-spec.json` (series number, plus variants `a` and `b` with presenter shot, headline lines, banner) and run `python3 tools/dual_host/compose_thumbnails.py episodes/<folder>`. Two thumbnails maximum.
+- If `Presenter Photo` is set in channel-config.md, use `"shot": "presenter"` for the face version in every thumbnail spec so the same photo is reused and only the headline words change.
+- Make the two thumbnails a real contrast so a test teaches something: A has the presenter's face plus 3 to 4 big words; B has only the topic and a diagram, no face (`"shot": "none"` with `panels`). Tell the user to use Studio's Test and compare, wait for about 1,000 impressions per version before deciding, keep the winning style for the next 3 episodes, then test again.
 - Keep headline text to about 6 words, keep it left of the face, and check the result at 168 by 94 pixels before accepting it.
 
 **Step 4 — Score and pick the winner**

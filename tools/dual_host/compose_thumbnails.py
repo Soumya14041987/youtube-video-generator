@@ -12,7 +12,7 @@ Exactly two options per episode, so the pick stays easy.
 Spec (see docs/THUMBNAILS.md):
 {
   "series_number": "04",                      shown as the EPISODE tag; use the published number
-  "a": { "shot": "thinking",                  presenter shot name from assets/presenter/, or "photo:<cutout.png>", or "none"
+  "a": { "shot": "thinking",                  presenter shot name from assets/presenter/, "presenter" (your saved photo), "photo:<cutout.png>", or "none"
          "lines": [["stdio vs", 190, "YELLOW"], ["HTTP", 300, "GREEN"]],
          "banner": "CHANGED IN 2026", "banner_size": 54, "max_w": 590,
          "icons": [["wrench", "Tools"]],      optional emoji row under the banner
@@ -24,7 +24,7 @@ Spec (see docs/THUMBNAILS.md):
 Colors: YELLOW GREEN WHITE RED BLUE ORANGE. If a presenter shot is missing, a face-less navy background is used.
 """
 import os, shutil, sys
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
+from PIL import Image, ImageOps, ImageDraw, ImageEnhance, ImageFilter
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import cfg, data_path, emoji_font, find_font  # noqa: E402
@@ -138,9 +138,11 @@ def navy_background():
     return Image.blend(bg, glow.filter(ImageFilter.GaussianBlur(120)), 0.9)
 
 
-def photo_base(cutout_path, face_center_x=960, scale=1.15, top=-6):
+def photo_base(cutout_path, face_center_x=960, scale=1.15, top=-6, flip=False):
     """Real photo (transparent PNG cutout) on the navy background with a soft blue halo."""
     cut = Image.open(cutout_path).convert("RGBA")
+    if flip:  # mirror the photo so the person looks toward the headline on the left
+        cut = ImageOps.mirror(cut)
     rgb = cut.convert("RGB")
     rgb = ImageEnhance.Color(ImageEnhance.Contrast(ImageEnhance.Brightness(rgb).enhance(1.08)).enhance(1.08)).enhance(1.05)
     cut = Image.merge("RGBA", (*rgb.split(), cut.split()[3]))
@@ -148,7 +150,7 @@ def photo_base(cutout_path, face_center_x=960, scale=1.15, top=-6):
     sharp = cut.convert("RGB").filter(ImageFilter.UnsharpMask(radius=1.6, percent=85, threshold=2))
     cut = Image.merge("RGBA", (*sharp.split(), cut.split()[3]))
     bbox = cut.getbbox()
-    face_x = bbox[0] + int((bbox[2] - bbox[0]) * 0.40)
+    face_x = bbox[0] + int((bbox[2] - bbox[0]) * (0.60 if flip else 0.40))
     person = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     person.paste(cut, (face_center_x - face_x, top), cut)
     halo = person.split()[3].filter(ImageFilter.MaxFilter(31)).filter(ImageFilter.GaussianBlur(22))
@@ -158,12 +160,29 @@ def photo_base(cutout_path, face_center_x=960, scale=1.15, top=-6):
     return base.convert("RGB")
 
 
+def _truthy(v):
+    return str(v).split("#")[0].strip().lower() in ("1", "true", "yes", "on")
+
+
 def base(shot, variant):
+    if shot == "presenter":  # your saved photo: Presenter Photo and related settings in channel-config.md
+        path = (cfg("Presenter Photo", "") or "").split("#")[0].strip()
+        if path:
+            variant = dict(variant)
+            variant.setdefault("photo_scale", cfg("Presenter Photo Scale", "0.9").split("#")[0].strip())
+            variant.setdefault("photo_top", cfg("Presenter Photo Top", "-45").split("#")[0].strip())
+            variant.setdefault("face_x", cfg("Presenter Photo Face X", "950").split("#")[0].strip())
+            variant.setdefault("flip", cfg("Presenter Photo Flip", "false"))
+            shot = "photo:" + path
+        else:
+            print("note: 'Presenter Photo' is not set in channel-config.md, using a face-less background")
+            shot = "none"
     if shot.startswith("photo:"):
         path = shot[6:]
         if not os.path.isabs(path):
             path = data_path(path)
-        return photo_base(path, int(variant.get("face_x", 960)))
+        return photo_base(path, int(float(variant.get("face_x", 960))), float(variant.get("photo_scale", 1.15)),
+                          int(float(variant.get("photo_top", -6))), _truthy(variant.get("flip", False)))
     if shot and shot != "none":
         p = data_path("assets", "presenter", f"{shot}.png")
         if os.path.exists(p):

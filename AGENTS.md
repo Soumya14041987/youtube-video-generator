@@ -35,6 +35,7 @@ thumbnails and upload details. It works as a Claude Code plugin or as a project 
 - Before committing, run `python3 scripts/check_private.py --staged` (the git hook does this when `git config core.hooksPath .githooks` is set). Never add a channel's own details (names, links, titles, ids) to a tracked file; use `channel-config.md` or the episode folders, which are ignored.
 - The skill and tools must stay generic: no creator, series or topic specifics in code or in the skill text. Series details come from `channel-config.md`.
 - A shorter video is fine, a half-covered topic is not: list what the episode must cover in `coverage.json` and run `python3 tools/dual_host/check_coverage.py episodes/<folder>`. If it does not fit the length limit, split it into parts.
+- After you change a skill, a tool or a doc, run `python3 scripts/sync_codex_package.py` and commit the result, so the Codex plugin package stays current (CI checks it).
 - Keep changes small and run the syntax check and `python3 scripts/doctor.py --ci` before finishing.
 
 ## Layout

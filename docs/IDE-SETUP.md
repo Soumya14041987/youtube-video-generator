@@ -13,6 +13,11 @@ links to the official page. If something here no longer matches, trust the offic
 | Cursor | `.claude/skills`, `.agents/skills`, `.cursor/skills` | `.cursor/rules/*.mdc`, `AGENTS.md` | `.cursor/mcp.json` | No | none |
 | Kiro | `.kiro/skills` only | `.kiro/steering/*.md`, `AGENTS.md` | `.kiro/settings/mcp.json` | No | run the installer |
 | PyCharm with Junie | `.junie/skills`, `.agents/skills` | `.junie/AGENTS.md` or `AGENTS.md` | `.junie/mcp/mcp.json` | No | run the installer |
+| Codex CLI (plugin) | the Codex plugin package | `AGENTS.md` | `~/.codex/config.toml` | No | `codex plugin marketplace add` |
+| claude.ai and Claude Desktop | the Claude plugin | the skill itself | connectors in Settings | Yes, if the plugin loads them | add the repo as a marketplace |
+| OpenClaw | the cloned folder | a line in the system prompt | its own settings | No | clone the repo |
+| Hermes Agent | `skills/*/SKILL.md` in the cloned folder | `AGENTS.md` | its own settings | No | clone into `~/.hermes/skills` |
+| Any tool with the skills CLI | `skills/` | `AGENTS.md` | varies | No | `npx skills add` |
 | Codex CLI, Zed, Warp, Aider and others | varies | `AGENTS.md` | varies | No | none |
 
 Sub-agents are a Claude Code feature. In every other tool the agent does those steps itself, in order, by following
@@ -193,6 +198,72 @@ The tool needs three abilities: read `AGENTS.md`, run shell commands, and write 
 - **Windsurf:** it reads `AGENTS.md`. Its rules live in `.windsurf/rules/` and its MCP file is `~/.codeium/windsurf/mcp_config.json`. This comes from a search of its documentation, so check the current Windsurf docs.
 - **Any other tool:** tell it "follow AGENTS.md, then follow `.claude/skills/youtube-video-generator/SKILL.md`". If it supports skill folders, run
   `python3 scripts/install_ide.py --ide agents` to put the skills in the shared `.agents/skills` folder.
+
+
+## 8. Codex CLI as a plugin
+
+The repo carries a Codex plugin package (`.agents/plugins/marketplace.json` and `.codex-marketplace/youtube-video-generator/`). Install from GitHub:
+
+```bash
+codex plugin marketplace add Soumya14041987/youtube-video-generator
+codex plugin add youtube-video-generator@youtube-video-generator
+```
+
+To test local changes, clone the repo and add the folder instead:
+
+```bash
+git clone https://github.com/Soumya14041987/youtube-video-generator.git
+cd youtube-video-generator
+codex plugin marketplace add .
+codex plugin add youtube-video-generator@youtube-video-generator
+```
+
+Then ask in plain English: "Make a YouTube episode about <topic>." Codex also reads `AGENTS.md`. The package leaves out the optional Archify diagram skill; add it with `python3 scripts/install_ide.py --ide agents` from a clone. After you change a skill, tool or doc, rebuild the package with `python3 scripts/sync_codex_package.py` and commit it (CI checks it is current). These commands follow the layout used by other published Codex plugins; I could not run Codex here, so check Codex's own docs if a step differs.
+
+## 9. claude.ai and Claude Desktop
+
+1. Open claude.ai (or Claude Desktop) and click **Customize** in the sidebar, then the **Plugins** tab.
+2. Click **Add**, then **Add marketplace**, then **Add from a repository**.
+3. Enter `Soumya14041987/youtube-video-generator` and sync.
+4. Open the **Discover** tab, find the plugin and click **Add**. In Claude Desktop the **+** is on the plugin card itself. Syncing only puts it in the catalog; the plugin appears under **Yours** after you add it.
+
+You need a paid Claude plan with code execution turned on. Honest limit: building a video needs Python, ffmpeg, Whisper and network access to your voice provider. Check what the claude.ai sandbox allows. If it cannot run them, use claude.ai for research, scripts, titles and upload text, and build the video locally in Claude Code.
+
+## 10. OpenClaw
+
+```bash
+git clone https://github.com/Soumya14041987/youtube-video-generator.git
+```
+
+Add this to the agent's system prompt:
+
+```
+You have YouTube video skills in ./youtube-video-generator/.
+For any YouTube episode task, read skills/youtube-video-generator/SKILL.md first and follow it.
+Run the tools in tools/dual_host/ and scripts/ with python3. Keep API keys in .env and never print them.
+```
+
+Then ask for an episode directly. The agent reads the skill files itself. Sub-agents are not used; the agent does each step in order.
+
+## 11. Hermes Agent
+
+Clone the repo into Hermes's skills folder:
+
+```bash
+git clone https://github.com/Soumya14041987/youtube-video-generator.git ~/.hermes/skills/youtube-video-generator
+```
+
+Hermes follows the open Agent Skills standard and loads `skills/*/SKILL.md` from the clone, which is why the repo has a `skills/` folder. Then call `/youtube-video-generator` from any Hermes chat. If you used OpenClaw before, `hermes claw migrate` moves your setup across.
+
+You can also try Hermes's own installer. Its help shows identifiers like `owner/repo/skill`; preview first with `hermes skills inspect <identifier>`. The `skills/` folder holds links to the real skills, so on Windows turn on symlinks (Developer Mode, then `git config core.symlinks true` before cloning), or use `python3 scripts/install_ide.py --ide agents --mode copy`.
+
+## 12. The skills CLI, and other tools
+
+```bash
+npx skills add Soumya14041987/youtube-video-generator
+```
+
+This works with tools that follow the same standard (Claude Code, Codex, Cursor and others). For Cursor, Cline and Aider without skill support, do it by hand: tell the tool to read `AGENTS.md` and `skills/youtube-video-generator/SKILL.md`, and run the Python tools through its shell. There is no automatic discovery in those tools.
 
 ## Check that it works
 

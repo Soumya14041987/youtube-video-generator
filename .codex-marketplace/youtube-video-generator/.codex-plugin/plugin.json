@@ -1,0 +1,39 @@
+{
+  "name": "youtube-video-generator",
+  "description": "Topic or URL in, complete YouTube episode out: script, diagrams, two-host voices, timeline sync, video, thumbnails and upload details.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Soumyadip Chatterjee",
+    "url": "https://github.com/Soumya14041987"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Soumya14041987/youtube-video-generator",
+  "repository": "https://github.com/Soumya14041987/youtube-video-generator",
+  "keywords": [
+    "youtube",
+    "video",
+    "thumbnail",
+    "voiceover",
+    "seo",
+    "agentic"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "YouTube Video Generator",
+    "shortDescription": "Topic or URL in, finished YouTube episode out.",
+    "longDescription": "Topic or URL in, complete YouTube episode out: script, diagrams, two-host voices, timeline sync, video, thumbnails and upload details.",
+    "developerName": "Soumyadip Chatterjee",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/Soumya14041987/youtube-video-generator",
+    "defaultPrompt": [
+      "Make a YouTube episode about <my topic>.",
+      "Make an episode from this link.",
+      "What is the next episode in my series?"
+    ]
+  }
+}

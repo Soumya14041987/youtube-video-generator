@@ -112,6 +112,9 @@ def main():
         if any(fnmatch.fnmatch(f, pat) or fnmatch.fnmatch(os.path.basename(f), pat) for pat in PRIVATE_PATHS):
             problems.append((f, "private file type (it is kept out of GitHub on purpose)"))
             continue
+        if "/" not in f and f.lower().endswith((".jpg", ".jpeg", ".png", ".heic", ".webp")):
+            problems.append((f, "an image in the project root (personal photos and banners are kept out of GitHub)"))
+            continue
         path = os.path.join(ROOT, f)
         if f.endswith(SKIP_CONTENT) or not os.path.isfile(path) or os.path.getsize(path) > 2_000_000:
             continue

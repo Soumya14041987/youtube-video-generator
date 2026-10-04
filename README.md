@@ -37,7 +37,12 @@ Every line of the script is spoken by its own text-to-speech call. The length of
 | Cursor | `.claude/skills` | No | none |
 | Kiro | `.kiro/skills` | No | `python3 scripts/install_ide.py --ide kiro` |
 | PyCharm with Junie | `.junie/skills` | No | `python3 scripts/install_ide.py --ide junie` |
-| Codex, Zed, Warp, Gemini CLI and other tools that read AGENTS.md | varies | No | see the guide |
+| Codex CLI (plugin) | the Codex package | No | `codex plugin marketplace add Soumya14041987/youtube-video-generator` |
+| claude.ai and Claude Desktop | the plugin | n/a | add the repo as a marketplace (see the guide) |
+| OpenClaw | the cloned folder | No | clone the repo and add one line to the system prompt |
+| Hermes Agent | `skills/` | No | clone into `~/.hermes/skills` |
+| Any tool with the skills CLI | `skills/` | No | `npx skills add Soumya14041987/youtube-video-generator` |
+| Zed, Warp, Gemini CLI and other tools that read AGENTS.md | varies | No | see the guide |
 
 Without sub-agents, one agent does every step itself. The output is the same.
 
@@ -212,7 +217,9 @@ You pay your own providers. The main costs are OpenAI text-to-speech for the nar
 .claude/agents/        five sub-agents (Claude Code only)
 .claude-plugin/        plugin and marketplace files
 tools/dual_host/       episode builder, thumbnails, metadata, chapters, photo tools
-scripts/               doctor.py and install_ide.py
+scripts/               doctor.py, install_ide.py, check_private.py, sync_codex_package.py
+skills/                links to the skills, for tools that look in skills/ (Hermes, the skills CLI)
+.codex-marketplace/    generated Codex plugin package (rebuild with scripts/sync_codex_package.py)
 config/mcp/            ready-made VidIQ connection files for each tool
 docs/                  IDE-SETUP.md, EPISODE-INPUT.md, THUMBNAILS.md, SHORTS.md, TROUBLESHOOTING.md
 examples/              starter series-log and playlist files

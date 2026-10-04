@@ -28,7 +28,8 @@ channel-config.md
 
 # Unrelated plugins — managed separately, not part of this repo
 :LinkedIn-blog-architect/
-.agents/
+.agents/*
+!.agents/plugins/
 .claude/skills/higgsfield-*
 
 # Local machine settings
@@ -53,3 +54,10 @@ assets/hosts/
 
 # Per-episode workfiles that may hold keys or personal details
 *.local.json
+
+# photos and images dropped in the project root (personal photos, banners, samples)
+/*.jpg
+/*.jpeg
+/*.png
+/*.heic
+/*.webp

@@ -1,0 +1,20 @@
+{
+  "name": "youtube-video-generator",
+  "interface": {
+    "displayName": "YouTube Video Generator"
+  },
+  "plugins": [
+    {
+      "name": "youtube-video-generator",
+      "source": {
+        "source": "local",
+        "path": "./.codex-marketplace/youtube-video-generator"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
