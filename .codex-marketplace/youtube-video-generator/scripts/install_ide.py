@@ -18,7 +18,7 @@ import argparse, os, shutil, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_SOURCE = os.path.abspath(os.path.join(HERE, ".."))
-SKILLS = ["youtube-video-generator", "youtube-episode", "youtube-thumbnail", "archify", "token-optimizer"]
+SKILLS = ["youtube-video-generator", "remotion-video", "youtube-episode", "youtube-thumbnail", "archify", "token-optimizer"]
 TARGETS = {"kiro": ".kiro/skills", "junie": ".junie/skills", "agents": ".agents/skills"}
 
 

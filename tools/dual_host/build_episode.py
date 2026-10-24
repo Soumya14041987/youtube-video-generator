@@ -24,7 +24,10 @@ SERIES = cfg("Series Name", cfg("Channel Name", "this channel"))
 _PACE = ("Natural, brisk conversational pace of about 150 words per minute with clear enunciation, like a "
          "confident technical YouTube presenter. Read the text exactly as written, do not add or skip words.")
 VOICES = {"openai": {K1: cfg("Host 1 Voice", "ash"), K2: cfg("Host 2 Voice", "coral")},
-          "gemini": {K1: cfg("Host 1 Gemini Voice", "Fenrir"), K2: cfg("Host 2 Gemini Voice", "Kore")}}
+          "gemini": {K1: cfg("Host 1 Gemini Voice", "Fenrir"), K2: cfg("Host 2 Gemini Voice", "Kore")},
+          # ElevenLabs premade voices: Eric (smooth, trustworthy man) and Sarah (confident, warm woman)
+          "elevenlabs": {K1: cfg("Host 1 ElevenLabs Voice", "cjVigY5qzO86Huf0OWal"), K2: cfg("Host 2 ElevenLabs Voice", "EXAVITQu4vr4xnSDxMaL")}}
+ELEVEN_MODEL = cfg("ElevenLabs Model", "eleven_multilingual_v2").split("#")[0].strip()
 STYLE = {
     K1: cfg("Host 1 Style", f"Male host {H1}. Warm, confident English accent. " + _PACE),
     K2: cfg("Host 2 Style", f"Female host {H2}. Warm, articulate, neutral English accent. " + _PACE),
@@ -94,10 +97,10 @@ def check_inputs(ep_dir, script):
             if not str(ln.get("text", "")).strip():
                 problems.append(f"slide {n}: a line has no text")
         vis = os.path.join(ep_dir, "visuals", s.get("visual", f"visual-{n}.png"))
-        if not os.path.exists(vis):
+        if not s.get("scene") and not os.path.exists(vis):  # a slide with a "scene" is drawn by Remotion, no image needed
             problems.append(f"slide {n}: image missing: visuals/{os.path.basename(vis)}")
         q = s.get("quiz")
-        if q and not os.path.exists(os.path.join(ep_dir, "visuals", q["reveal_visual"])):
+        if q and not s.get("scene") and not os.path.exists(os.path.join(ep_dir, "visuals", q["reveal_visual"])):
             problems.append(f"slide {n}: quiz answer image missing: visuals/{q['reveal_visual']}")
     if problems:
         sys.exit("Cannot build this episode yet:\n  - " + "\n  - ".join(problems))
@@ -177,6 +180,41 @@ def tts_gemini(text, speaker, out_wav, key):
     finish_wav(raw, out_wav, text)
 
 
+def tts_elevenlabs(text, speaker, out_wav, key):
+    """ElevenLabs text to speech. Asks for raw 24 kHz audio so it fits the same pipeline as the other providers."""
+    voice = VOICES["elevenlabs"][speaker]
+    pf = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
+    json.dump({"text": text, "model_id": ELEVEN_MODEL}, pf); pf.close()
+    cf = tempfile.NamedTemporaryFile("w", suffix=".cfg", delete=False)
+    cf.write(f'header = "xi-api-key: {key}"\n'); cf.close()
+    raw = out_wav + ".raw.pcm"
+    try:
+        for attempt in range(5):
+            r = run(["curl", "-s", "--max-time", "180", "-K", cf.name, "-H", "Content-Type: application/json", "-d", f"@{pf.name}",
+                     "-o", raw, "-w", "%{http_code}",
+                     f"https://api.elevenlabs.io/v1/text-to-speech/{voice}?output_format=pcm_24000"])
+            code = r.stdout.strip()
+            if code == "200" and os.path.getsize(raw) > 1000:
+                break
+            body = open(raw, errors="ignore").read(400) if os.path.exists(raw) else ""
+            if "quota_exceeded" in body:
+                raise SystemExit("ElevenLabs credits are used up for this month. Check your balance, or switch TTS Provider.")
+            if code in ("401", "403") or "invalid_api_key" in body:
+                raise SystemExit("ElevenLabs rejected the key (or this plan cannot use that voice or output). Check ELEVENLABS_API_KEY in .env and the voice IDs.")
+            time.sleep(3 * (attempt + 1))
+        else:
+            raise RuntimeError(f"ElevenLabs TTS failed ({code}): {text[:40]}")
+        pcm = open(raw, "rb").read()
+    finally:
+        os.unlink(pf.name); os.unlink(cf.name)
+        if os.path.exists(raw):
+            os.unlink(raw)
+    rawwav = out_wav + ".raw.wav"
+    with wave.open(rawwav, "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(24000); w.writeframes(pcm)
+    finish_wav(rawwav, out_wav, text)
+
+
 def line_wav(d, n, i, ln):
     sig = str(TARGET_WPM) + PROVIDER + VOICES[PROVIDER][ln["speaker"]] + STYLE[ln["speaker"]] + ln["text"]
     h = hashlib.md5(sig.encode()).hexdigest()[:8]
@@ -186,8 +224,10 @@ def line_wav(d, n, i, ln):
 
 
 def step_tts(ep_dir, script):
-    key = env_key("OPENAI_API_KEY" if PROVIDER == "openai" else "GEMINI_API_KEY")
-    fn = tts_openai if PROVIDER == "openai" else tts_gemini
+    key = env_key({"openai": "OPENAI_API_KEY", "gemini": "GEMINI_API_KEY", "elevenlabs": "ELEVENLABS_API_KEY"}[PROVIDER])
+    fn = {"openai": tts_openai, "gemini": tts_gemini, "elevenlabs": tts_elevenlabs}[PROVIDER]
+    if PROVIDER == "elevenlabs":
+        print("note: ElevenLabs free plans have no commercial license and require 'elevenlabs.io' in the video title. Use a paid plan for monetized videos.")
     d = os.path.join(ep_dir, "audio", "lines"); os.makedirs(d, exist_ok=True)
     jobs = []
     for s in script["slides"]:
@@ -196,7 +236,7 @@ def step_tts(ep_dir, script):
             if not os.path.exists(ln["wav"]):
                 jobs.append(ln)
     print(f"TTS ({PROVIDER}): {len(jobs)} lines to generate", flush=True)
-    with cf.ThreadPoolExecutor(max_workers=4 if PROVIDER == "openai" else 1) as ex:
+    with cf.ThreadPoolExecutor(max_workers={"openai": 4, "elevenlabs": 2}.get(PROVIDER, 1)) as ex:
         futs = {ex.submit(fn, ln["text"], ln["speaker"], ln["wav"], key): ln for ln in jobs}
         for f in cf.as_completed(futs):
             f.result(); print("  done", os.path.basename(futs[f]["wav"]), flush=True)
@@ -424,13 +464,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("episode_dir"); ap.add_argument("--bible"); ap.add_argument("--ep", type=int)
     ap.add_argument("--steps", default="parse,tts,timeline,verify,render")
-    ap.add_argument("--tts", default=None, choices=["openai", "gemini"], help="voice provider; default is 'TTS Provider' in channel-config.md, else openai")
+    ap.add_argument("--tts", default=None, choices=["openai", "gemini", "elevenlabs"], help="voice provider; default is 'TTS Provider' in channel-config.md, else openai")
     ap.add_argument("--out", default="episode.mp4")
     a = ap.parse_args()
     global PROVIDER
     PROVIDER = a.tts or cfg("TTS Provider", "openai").split("#")[0].strip().lower()
-    if PROVIDER not in ("openai", "gemini"):
-        sys.exit(f"TTS Provider must be openai or gemini, not '{PROVIDER}'")
+    if PROVIDER not in ("openai", "gemini", "elevenlabs"):
+        sys.exit(f"TTS Provider must be openai, gemini or elevenlabs, not '{PROVIDER}'")
     ep_dir, steps = os.path.abspath(a.episode_dir), a.steps.split(",")
     sj = os.path.join(ep_dir, "dualhost.json")
     if "parse" in steps and a.bible:
@@ -441,7 +481,13 @@ def main():
     if script.get("length_minutes"):  # per-episode exception to the length rule in channel-config.md
         global MIN_SECONDS, MAX_SECONDS
         MIN_SECONDS, MAX_SECONDS = int(script["length_minutes"][0] * 60), int(script["length_minutes"][1] * 60)
+    for sl in script["slides"]:
+        if sl.get("scene"):
+            sl.setdefault("visual", f"scene-{sl['n']:02d}.png")
     apply_quiz_defaults(script)
+    if any(sl.get("scene") for sl in script["slides"]) and "render" in steps:
+        steps = [x for x in steps if x != "render"]
+        print("this episode uses Remotion scenes: skipping the image render. Next: python3 tools/dual_host/render_remotion.py", ep_dir)
     first = script["slides"][0]["lines"]
     if not first or f"I'm {H1}" not in first[0]["text"]:
         first[0:0] = [dict(x) for x in make_intro(script.get("intro_style", INTRO_STYLE))]

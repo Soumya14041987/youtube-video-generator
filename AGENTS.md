@@ -22,6 +22,7 @@ thumbnails and upload details. It works as a Claude Code plugin or as a project 
 - Upload package and readiness check: `python3 tools/dual_host/make_metadata.py episodes/<folder>`
 - Chapter list from the real timeline: `python3 tools/dual_host/make_chapters.py episodes/<folder>`
 - Vertical Shorts from a built episode: `python3 tools/dual_host/make_short.py episodes/<folder> --suggest 3`, then `--lines A-B --hook "..."` (see `docs/SHORTS.md`)
+- Animated video from only a topic: `/remotion-video <topic>` (skill `remotion-video`), or `python3 tools/dual_host/build_episode.py episodes/<folder> --steps tts,timeline,verify` then `python3 tools/dual_host/render_remotion.py episodes/<folder>` (see `docs/REMOTION.md`; setup once with `--setup`, needs Node 18+)
 - Syntax check after editing tools: `python3 -m py_compile tools/dual_host/*.py scripts/*.py`
 - Setup check without keys: `python3 scripts/doctor.py --ci`
 

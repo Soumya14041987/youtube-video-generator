@@ -15,11 +15,11 @@ import filecmp, json, os, shutil, sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 PKG_REL = os.path.join(".codex-marketplace", "youtube-video-generator")
 PKG = os.path.join(ROOT, PKG_REL)
-SKILLS = ["youtube-video-generator", "youtube-episode", "youtube-thumbnail", "token-optimizer"]
+SKILLS = ["youtube-video-generator", "remotion-video", "youtube-episode", "youtube-thumbnail", "token-optimizer"]
 COPY_DIRS = ["tools", "scripts", "docs", "config", "examples"]
 COPY_FILES = ["requirements.txt", ".env.example", "channel-config.md.example", "LICENSE", "THIRD_PARTY_NOTICES.md", "AGENTS.md"]
 PLACEHOLDERS = ["assets/presenter/README.md", "assets/music/README.md"]
-IGNORE = shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store", "node_modules")
+IGNORE = shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store", "node_modules", "out", "current")
 
 
 def manifest():

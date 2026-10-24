@@ -75,7 +75,11 @@ def check_keys_and_secrets():
         prov = common.cfg("TTS Provider", "openai").split("#")[0].strip().lower()
         k = common.env_key("OPENAI_API_KEY", required=False)
         g = common.env_key("GEMINI_API_KEY", required=False)
-        need_o, need_g = prov != "gemini", prov == "gemini"
+        need_o, need_g = prov == "openai", prov == "gemini"
+        if prov == "elevenlabs":
+            e = common.env_key("ELEVENLABS_API_KEY", required=False)
+            add("PASS" if e else "FAIL", "ELEVENLABS_API_KEY is set (value not shown)" if e else "ELEVENLABS_API_KEY is not set",
+                "Add ELEVENLABS_API_KEY=... to .env (never paste it in chat)")
         add("PASS" if k else ("FAIL" if need_o else "WARN"), f"OPENAI_API_KEY is set (value not shown)" if k else
             f"OPENAI_API_KEY is not set" + ("" if need_o else " (optional, TTS Provider is gemini)"),
             "Copy .env.example to .env and add your key, or export it in your shell or IDE")
@@ -112,6 +116,19 @@ def check_privacy():
     r = run([sys.executable, os.path.join(common.CODE_ROOT, "scripts", "check_private.py"), "--all"])
     add("PASS" if r.returncode == 0 else "FAIL", "privacy check: no keys, private files or channel details in files git would publish" if r.returncode == 0
         else "privacy check failed: " + " ".join(r.stdout.split("\n")[1:4]).strip(), "python3 scripts/check_private.py --all")
+
+
+def check_remotion():
+    node = shutil.which("node")
+    if not node:
+        add("WARN", "Node.js not found (only needed for the Remotion video skill)", "Install Node 18 or newer from nodejs.org")
+        return
+    v = run([node, "-v"]).stdout.strip().lstrip("v")
+    ok_ver = v.split(".")[0].isdigit() and int(v.split(".")[0]) >= 18
+    add("PASS" if ok_ver else "WARN", f"Node {v} (Remotion needs 18 or newer)", "Update Node from nodejs.org")
+    inst = os.path.isdir(os.path.join(common.CODE_ROOT, "tools", "remotion", "node_modules"))
+    add("PASS" if inst else "WARN", "Remotion project installed" if inst else "Remotion project not installed yet (only needed for /remotion-video)",
+        "python3 tools/dual_host/render_remotion.py --setup")
 
 
 def check_codex_package():
@@ -154,7 +171,7 @@ def check_ides():
 def main():
     add("PASS", f"{platform.system()} {platform.release()}, code at {common.CODE_ROOT}")
     add("PASS", f"project folder: {common.PROJECT_ROOT}")
-    check_python(); check_packages(); check_ffmpeg(); check_fonts(); check_keys_and_secrets(); check_privacy(); check_codex_package(); check_project(); check_ides()
+    check_python(); check_packages(); check_ffmpeg(); check_fonts(); check_keys_and_secrets(); check_privacy(); check_codex_package(); check_remotion(); check_project(); check_ides()
     order = {"FAIL": 0, "WARN": 1, "PASS": 2}
     for level, text, fix in RESULTS:
         print(f"{level:5} {text}")

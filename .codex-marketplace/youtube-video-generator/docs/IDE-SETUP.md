@@ -265,6 +265,10 @@ npx skills add Soumya14041987/youtube-video-generator
 
 This works with tools that follow the same standard (Claude Code, Codex, Cursor and others). For Cursor, Cline and Aider without skill support, do it by hand: tell the tool to read `AGENTS.md` and `skills/youtube-video-generator/SKILL.md`, and run the Python tools through its shell. There is no automatic discovery in those tools.
 
+## Animated videos with the Remotion skill
+
+After any install above, `/remotion-video <topic>` makes an animated video from a topic. It needs a tool that can run shell commands and Node 18 or newer (Claude Code, the Claude desktop Code tab, VS Code, Cursor, JetBrains agents, Codex). Setup once: `python3 tools/dual_host/render_remotion.py --setup`. See [REMOTION.md](REMOTION.md).
+
 ## Check that it works
 
 Run these in order. Stop at the first one that fails and see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).

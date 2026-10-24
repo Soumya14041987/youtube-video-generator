@@ -1,0 +1,20 @@
+{
+  "name": "ytvg-remotion",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Remotion renderer for the YouTube Video Generator. Reads scenes and timing made by render_remotion.py.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Episode out/episode.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.538",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.538"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.6.0"
+  }
+}

@@ -140,11 +140,19 @@ Edit `channel-config.md`. Every value is optional except the subscribe link or c
 | `Channel ID` or `Subscribe link` | The subscribe link in every description |
 | `LinkedIn`, `Medium`, `X`, `GitHub`, `Instagram`, `Website`, `AWS Builder Center` | Follow links added to descriptions |
 | `Banned Links` | Words that must never appear in a description (catches wrong links) |
-| `TTS Provider` | `openai` or `gemini`, the voice service used for every episode |
+| `TTS Provider` | `openai`, `gemini` or `elevenlabs`, the voice service used for every episode |
 | `Target Country`, `Category` | Country for keyword research, and the YouTube category |
 | `Intro Style` | `short` (about 3 seconds) or `full` spoken introduction |
 | `Publish slot` | Suggested day and time |
 | `Presenter Look` | Describes the presenter for generated photos |
+
+## Animated videos from only a topic (Remotion)
+
+```
+/remotion-video How to build an MCP server in Python
+```
+
+The `remotion-video` skill researches and fact-checks the topic, writes a two-host script with animated scenes (typing code, terminal commands, diagrams, comparisons, a quiz with a countdown), records the voices, renders the video with [Remotion](https://github.com/remotion-dev/remotion), and makes the thumbnails, Shorts and upload text. Every command on screen is exact because it is drawn by code. It works in Claude Code, the Claude desktop app (Code tab) and IDE agents. Setup once with `python3 tools/dual_host/render_remotion.py --setup` (needs Node 18 or newer). Details and the scene reference are in [docs/REMOTION.md](docs/REMOTION.md). Remotion has its own licence; read it before commercial use at a company.
 
 ## Optional: VidIQ for growth
 
@@ -183,6 +191,7 @@ python3 tools/dual_host/compose_thumbnails.py <episode_dir>
 python3 tools/dual_host/make_metadata.py <episode_dir>     # upload package and readiness report
 python3 tools/dual_host/make_chapters.py <episode_dir>     # chapter list from real timings
 python3 tools/dual_host/make_short.py <episode_dir> --suggest 3   # vertical Shorts
+python3 tools/dual_host/render_remotion.py <episode_dir>          # animated video with Remotion (see docs/REMOTION.md)
 python3 tools/dual_host/gen_presenter.py <reference_photo> # presenter shots for thumbnails
 python3 tools/dual_host/cutout.py <photo> <out.png>        # cut a person out of a photo
 ```
@@ -221,7 +230,8 @@ scripts/               doctor.py, install_ide.py, check_private.py, sync_codex_p
 skills/                links to the skills, for tools that look in skills/ (Hermes, the skills CLI)
 .codex-marketplace/    generated Codex plugin package (rebuild with scripts/sync_codex_package.py)
 config/mcp/            ready-made VidIQ connection files for each tool
-docs/                  IDE-SETUP.md, EPISODE-INPUT.md, THUMBNAILS.md, SHORTS.md, TROUBLESHOOTING.md
+docs/                  IDE-SETUP.md, EPISODE-INPUT.md, THUMBNAILS.md, SHORTS.md, REMOTION.md, TROUBLESHOOTING.md
+tools/remotion/        the Remotion project (scenes written in React)
 examples/              starter series-log and playlist files
 AGENTS.md              instructions every assistant reads
 CLAUDE.md              Claude Code instructions (imports AGENTS.md)

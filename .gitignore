@@ -61,3 +61,13 @@ assets/hosts/
 /*.png
 /*.heic
 /*.webp
+
+# Remotion renderer: installed packages, render output and the per-episode audio copy
+tools/remotion/node_modules/
+tools/remotion/out/
+tools/remotion/public/current/
+
+# personal skill packs and prompt files dropped in the project folder
+YouTube Skills & Prompts/
+*.skill
+claude-skill-agent-reach.README.md

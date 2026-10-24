@@ -21,6 +21,7 @@
   ],
   "skills": [
     "./.claude/skills/youtube-video-generator",
+    "./.claude/skills/remotion-video",
     "./.claude/skills/youtube-episode",
     "./.claude/skills/youtube-thumbnail",
     "./.claude/skills/archify",

@@ -3,6 +3,7 @@
 ## Unreleased
 
 Added
+- `remotion-video` skill and `render_remotion.py`: topic in, animated Remotion video out (scenes: title, bullets, code, terminal, diagram, compare, quiz with countdown, takeaways, end). Slides can carry a `scene` instead of an image. Guide: docs/REMOTION.md.
 - Install paths for Codex CLI (plugin), claude.ai and Claude Desktop, OpenClaw, Hermes Agent and the skills CLI, plus a `skills/` mirror and a generated Codex package (`scripts/sync_codex_package.py`).
 - Privacy guard: `scripts/check_private.py`, git hooks in `.githooks/`, a CI step and a doctor check block private files, keys and anything copied from your own channel files.
 - Coverage check (`check_coverage.py`, `coverage.json`) so shortening a video never drops part of the topic.

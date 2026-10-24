@@ -24,7 +24,7 @@ Host 1 Name: Alex
 Host 2 Name: Elena
 Target Country: US    # two-letter code used for keyword research, for example IN, US, GB
 Category: Education
-TTS Provider: openai    # openai or gemini. gemini needs a key from a Google project with billing, or it is limited to about 10 lines a day
+TTS Provider: openai    # openai, gemini or elevenlabs (ElevenLabs free plans have no commercial license; use a paid plan for monetized videos). gemini needs a key from a Google project with billing, or it is limited to about 10 lines a day
 Intro Style: short
 Presenter Photo:    # optional. A transparent PNG cutout of you, for example assets/presenter/real/me.png (see docs/THUMBNAILS.md)
 Presenter Photo Flip: false    # true mirrors the photo so you look toward the headline on the left

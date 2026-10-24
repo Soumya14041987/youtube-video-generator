@@ -807,7 +807,7 @@ Growth rules for the script and upload
 
 ## Dual-Host Mode (default)
 
-Two voices share every episode. By default they are Alex (male, OpenAI voice ash) and Elena (female, OpenAI voice coral); change the names, voices and style in `channel-config.md` (`Host 1 Name`, `Host 1 Voice`, `Host 1 Style`, and the same for host 2). The voice provider is set by `TTS Provider` in channel-config.md (`openai` or `gemini`; `--tts` overrides it for one run). OpenAI uses gpt-4o-mini-tts. Gemini (voices Fenrir and Kore by default) is capped at about 10 requests a day unless the API key belongs to a Google project with billing linked, so confirm the key is from the billed project before a full build. Never mix providers inside one episode: each episode uses one provider for every line.
+Two voices share every episode. By default they are Alex (male, OpenAI voice ash) and Elena (female, OpenAI voice coral); change the names, voices and style in `channel-config.md` (`Host 1 Name`, `Host 1 Voice`, `Host 1 Style`, and the same for host 2). The voice provider is set by `TTS Provider` in channel-config.md (`openai`, `gemini` or `elevenlabs`; `--tts` overrides it for one run). OpenAI uses gpt-4o-mini-tts. Gemini (voices Fenrir and Kore by default) is capped at about 10 requests a day unless the API key belongs to a Google project with billing linked, so confirm the key is from the billed project before a full build. ElevenLabs (premade voices Eric and Sarah by default, key in `ELEVENLABS_API_KEY`) is optional: its free plan has no commercial license and needs "elevenlabs.io" in the title, so use a paid plan for monetized videos. Never mix providers inside one episode: each episode uses one provider for every line.
 
 How to run it, in order:
 
